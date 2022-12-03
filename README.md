@@ -10,7 +10,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About
 
-[AUTOMATIC1111's Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) is one of the most powerful tools in the generative AI space. Stable Boy puts that power into GIMP by calling into A1111 WebUI's API.
+[AUTOMATIC1111's Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) is one of the most powerful tools in the generative AI space. Stable Boy puts that power into GIMP 2.10 by calling into A1111 WebUI's API.
 
 Here's a short demo video of what Stable Boy can do at the moment:
 
@@ -22,11 +22,17 @@ Here's a short demo video of what Stable Boy can do at the moment:
 
 ## Installation
 
-1. Clone the repo
+:warning: This version has been tested with **GIMP 2.10** on MacOS only. :warning:
+
+1. Clone the repo:
    ```sh
    git clone https://github.com/tgiesselmann/gimp-stable-boy.git
    ```
-1. Add `gimp-stable-boy/src/gimp-stable-boy` folder to GIMP's plugin search path.
+1. Add the absolute path to _sub-folder_ (!) `src/gimp-stable-boy` to GIMP's plugin search path:
+   ```
+   /home/...and-so-on.../gimp-stable-boy/src/gimp-stable-boy     # MacOS, Linux
+   C:/Users/...and-so-on.../gimp-stable-boy/src/gimp-stable-boy  # Windows
+   ```
 1. Start A1111 WebUI with argument `--api`. It doesn't matter whether it's running on your local machine or somewhere in the cloud.
 1. Start GIMP.
 1. Create a new file with a reasonable size, like `512x512`.
