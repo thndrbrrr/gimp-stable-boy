@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Stable Boy
 # Copyright (C) 2022 Torben Giesselmann
 #
