@@ -109,6 +109,7 @@ In the end, everyone stands on the shoulders of giants.
 
 * [Stable Diffusion](https://github.com/CompVis/stable-diffusion)
 * [AUTOMATIC1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
+* [GIMP](https://www.gimp.org/)
 * [blueturtleai's gimp-stable-diffusion](https://github.com/blueturtleai/gimp-stable-diffusion)
 * [Stack Overflow](https://stackoverflow.com/)
 * [Othneil Drew](https://github.com/othneildrew)
