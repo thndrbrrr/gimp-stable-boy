@@ -1,7 +1,7 @@
 <a name="readme-top"></a>
 
-<h3 align="center">Stable Boy</h3>
-
+<div>
+<h1 align="center">Stable Boy</h1>
   <p align="center">
     A GIMP plugin for AUTOMATIC1111's Stable Diffusion WebUI
   </p>
@@ -27,7 +27,7 @@ Here's a short demo video of what Stable Boy can do at the moment:
    git clone https://github.com/tgiesselmann/gimp-stable-boy.git
    ```
 1. Add `gimp-stable-boy/src/gimp-stable-boy` folder to GIMP's plugin search path.
-1. Start A1111 WebUI with argument `--api`.
+1. Start A1111 WebUI with argument `--api`. It doesn't matter whether it's running on your local machine or somewhere in the cloud.
 1. Start GIMP.
 1. Create a new file with a reasonable size, like `512x512`.
 1. Stable Boy can be found in the `Stable Boy` menu, with the following options:
@@ -62,6 +62,7 @@ For inpainting to work you will need to add a layer with name "`Inpainting Mask`
 - [ ] Rectangular selections as image sources for each mode
 - [ ] Better GUI
 - [ ] Support for more options
+- [ ] Better documentation
 
 See the [open issues](https://github.com/tgiesselmann/gimp-stable-boy/issues) for known issues.
 
@@ -74,11 +75,11 @@ See the [open issues](https://github.com/tgiesselmann/gimp-stable-boy/issues) fo
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**. If you have a suggestion that would make this better, please fork the repo and create a pull request. Thank you!
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Adding some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a pull request
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
