@@ -107,7 +107,7 @@ def make_extras_request_data(**kwargs):
 
 
 def make_generation_request_data(**kwargs):
-    return {
+    req = {
         'prompt': kwargs['prompt'],
         'negative_prompt': kwargs['negative_prompt'],
         'steps': kwargs['steps'],
@@ -116,9 +116,15 @@ def make_generation_request_data(**kwargs):
         'cfg_scale': kwargs['cfg_scale'],
         'seed': kwargs['seed'],
         'restore_faces': kwargs['restore_faces'],
-        'height': int(kwargs['height']),
-        'width': int(kwargs['width']),
     }
+
+    if "height" in kwargs and kwargs["height"] != "same":
+        req['height'] = int(kwargs['height'])
+    
+    if "width" in kwargs and kwargs["width"] != "same":
+        req['width'] = int(kwargs['width'])
+    
+    return req
 
 
 def add_img2img_params(req_data, **kwargs):
