@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import os, sys
 import ssl
 import json
 from time import time as time  #beauty
@@ -25,6 +25,10 @@ import urllib2
 import tempfile
 import gimpfu
 from gimpfu import *
+
+# Fixes relative imports in windows
+path = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, path)
 from params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS
 
 
@@ -144,7 +148,7 @@ def create_api_request_from_gimp_params(**kwargs):
     elif kwargs['mode'] == 'EXTRAS':
         uri = 'sdapi/v1/extra-single-image'
         req_data = make_extras_request_data(**kwargs)
-    return urllib2.Request(url=os.path.join(kwargs['api_base_url'], uri),
+    return urllib2.Request(url=kwargs['api_base_url'] + "/" + str(uri),
                            headers={'Content-Type': 'application/json'},
                            data=json.dumps(req_data))
 
