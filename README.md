@@ -22,28 +22,26 @@ Here's a short demo video of what Stable Boy can do at the moment:
 
 ## Installation
 
-:warning: This version has been tested with **GIMP 2.10** on MacOS only. :warning:
-
 1. Clone the repo:
    ```sh
    git clone https://github.com/tgiesselmann/gimp-stable-boy.git
    ```
-1. Start GIMP
-1. Add the absolute path to _sub-folder_ (!) `src/gimp-stable-boy` to GIMP's plugin search path:
+2. Start GIMP
+3. Add the absolute path to _sub-folder_ (!) `src/gimp-stable-boy` to GIMP's plugin search path:
    ```
    /home/...and-so-on.../gimp-stable-boy/src/gimp-stable-boy     # MacOS, Linux
    C:/Users/...and-so-on.../gimp-stable-boy/src/gimp-stable-boy  # Windows
    ```
    ![GIMP Preferences](public/images/gimp-prefs-plugin-path.png)
-1. Restart GIMP.
-1. Create a new file with a reasonable size, like `512x512`.
-1. Stable Boy can be found in the `Stable Boy` menu, with the following options:
+4. Restart GIMP.
+5. Create a new file with a reasonable size, like `512x512`.
+6. Stable Boy can be found in the `Stable Boy` menu, with the following options:
    1. Text to Image
-   1. Image to Image
-   1. Inpainting
-   1. Extras (for upscaling)
-1. Start A1111 WebUI with argument `--api`. It doesn't matter whether it's running on your local machine or somewhere in the cloud.
-1. Copy-paste A1111 WebUI's URL (something like `https://abcdef123.gradio.com`) into the `API URL` field. (For the time being you'll have to do that once for every generation option.)
+   2. Image to Image
+   3. Inpainting
+   4. Extras (for upscaling)
+7. Start A1111 WebUI with argument `--api`. It doesn't matter whether it's running on your local machine or somewhere in the cloud.
+8. Copy-paste A1111 WebUI's URL (something like `https://abcdef123.gradio.com`) into the `API URL` field. (For the time being you'll have to do that once for every generation option.)
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
