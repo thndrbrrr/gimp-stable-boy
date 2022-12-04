@@ -28,7 +28,9 @@ Here's a short demo video of what Stable Boy can do at the moment:
    ```sh
    git clone https://github.com/tgiesselmann/gimp-stable-boy.git
    ```
-1. Add the absolute path to _sub-folder_ (!) `src/gimp-stable-boy` to GIMP's plugin search path:
+1. On Gimp, go to Edit > Preferences and select Folders > Script
+   ![Plugins paths](./public/images/plugins-screenshot.png)
+   Add the absolute path to _sub-folder_ (!) `src/gimp-stable-boy` to GIMP's plugin search path:
    ```
    /home/...and-so-on.../gimp-stable-boy/src/gimp-stable-boy     # MacOS, Linux
    C:/Users/...and-so-on.../gimp-stable-boy/src/gimp-stable-boy  # Windows
