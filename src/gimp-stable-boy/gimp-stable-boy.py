@@ -116,6 +116,8 @@ def make_generation_request_data(**kwargs):
         'cfg_scale': kwargs['cfg_scale'],
         'seed': kwargs['seed'],
         'restore_faces': kwargs['restore_faces'],
+        'height': int(kwargs['height']),
+        'width': int(kwargs['width']),
     }
 
 
@@ -172,7 +174,11 @@ def run(*args, **kwargs):
 
 def run_txt2img(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['TXT2IMG']), args)))
+    kwargs["height"] = 768
+    kwargs["width"] = 768
     kwargs['mode'] = 'TXT2IMG'
+    print(kwargs)
+    f.flush()
     run(args, **kwargs)
 
 
