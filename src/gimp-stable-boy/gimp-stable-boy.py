@@ -53,8 +53,8 @@ def encode_init_img(src_img, src_drw):
     tmp_init_img_path = tempfile.mktemp(suffix='.png')
     pdb.file_png_save_defaults(sel_img, sel_img.layers[0], tmp_init_img_path, tmp_init_img_path)
     encoded_init_img = encode_png(tmp_init_img_path)
-    print('init img: ' + tmp_init_img_path)
-    # os.remove(tmp_init_img_path)
+    # print('init img: ' + tmp_init_img_path)
+    os.remove(tmp_init_img_path)
     return encoded_init_img
 
 
@@ -69,17 +69,11 @@ def encode_mask(src_img, src_drw):
     pdb.gimp_edit_copy_visible(img)
     mask_img = pdb.gimp_edit_paste_as_new_image()
     pdb.gimp_layer_flatten(mask_img.layers[0])
-
-    # inp_layer = pdb.gimp_layer_new_from_drawable(src_inp_layer, mask_img)
-    # mask_img = pdb.gimp_image_new(img.width, img.height, 0)
-    # pdb.gimp_item_set_visible(inp_layer, True)
-    # pdb.gimp_layer_flatten(inp_layer)
-    # mask_img.add_layer(inp_layer, 1)
     mask_img_path = tempfile.mktemp(suffix='.png')
     pdb.file_png_save_defaults(mask_img, mask_img.layers[0], mask_img_path, mask_img_path)
     encoded_mask = encode_png(mask_img_path)
-    print('mask img: ' + mask_img_path)
-    # os.remove(mask_img_path)
+    # print('mask img: ' + mask_img_path)
+    os.remove(mask_img_path)
     return encoded_mask
 
 
@@ -93,7 +87,7 @@ def open_as_images(images):
         gimp_img = pdb.file_png_load(tmp_img_path, tmp_img_path)
         # TODO: add "Inpainting" layer?
         pdb.gimp_display_new(gimp_img)
-        # os.remove(tmp_img_path)
+        os.remove(tmp_img_path)
 
 
 def create_layers(img, drw, img_batch):
@@ -109,6 +103,7 @@ def create_layers(img, drw, img_batch):
         _, x, y, _, _ = pdb.gimp_selection_bounds(img)
         pdb.gimp_layer_set_offsets(sd_layer, x, y)
         pdb.gimp_image_delete(sd_img)
+        os.remove(tmp_sd_img_path)
     mask_layer = pdb.gimp_image_get_layer_by_name(img, MASK_LAYER_NAME)
     if mask_layer:
         pdb.gimp_image_raise_item_to_top(img, mask_layer)
@@ -123,6 +118,7 @@ def make_extras_request_data(**kwargs):
 
 
 def make_generation_request_data(**kwargs):
+    _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(kwargs['image'])
     return {
         'prompt': kwargs['prompt'],
         'negative_prompt': kwargs['negative_prompt'],
@@ -132,6 +128,8 @@ def make_generation_request_data(**kwargs):
         'cfg_scale': kwargs['cfg_scale'],
         'seed': kwargs['seed'],
         'restore_faces': kwargs['restore_faces'],
+        'width': x2 - x1,
+        'height': y2 - y1,
     }
 
 
@@ -173,17 +171,6 @@ def run(*args, **kwargs):
     img = kwargs['image']
     try:
         sd_request = create_api_request_from_gimp_params(**kwargs)
-        print(sd_request.get_full_url())
-        # # with open('/var/folders/_g/x2n28ygx3ts8lk5c_16b3rrr0000gn/T/tmpEO5Sw_.png') as png:
-        # #     tmp_sd_img = png.read()
-        # with open('/private/var/folders/_g/x2n28ygx3ts8lk5c_16b3rrr0000gn/T/tmpYRJ2gI.png', "rb") as img:
-        #     # 'data:image/png;base64,' + base64.b64encode(img.read())
-        #     # enc_tmp_img = 'data:image/png;base64,' + base64.b64encode(img.read())
-        #     enc_tmp_img = base64.b64encode(img.read())
-        # print(len(enc_tmp_img))
-        # print(enc_tmp_img[:40])
-        # create_layers(kwargs['image'], kwargs['drawable'], [enc_tmp_img, enc_tmp_img])
-        # return
         sd_result = json.loads(urllib2.urlopen(sd_request).read())
         if kwargs['mode'] == 'EXTRAS':
             generated_images = [sd_result['image']]
@@ -193,7 +180,6 @@ def run(*args, **kwargs):
         if IMG_TARGET[kwargs['img_target']] == 'Images':
             open_as_images(generated_images)
         elif IMG_TARGET[kwargs['img_target']] == 'Layers':
-            # TODO: Put layer to right position
             create_layers(kwargs['image'], kwargs['drawable'], generated_images)
         img.undo_group_end()
     except urllib2.HTTPError as e:
