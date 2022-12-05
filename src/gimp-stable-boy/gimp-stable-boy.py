@@ -26,10 +26,13 @@ import tempfile
 import gimpfu
 from gimpfu import *
 
-# Fixes relative imports in windows
+# Fix relative imports in Windows
 path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, path)
 from params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS
+
+
+MASK_LAYER_NAME = 'Inpainting Mask'
 
 
 def encode_png(img_path):
@@ -41,7 +44,7 @@ def encode_init_img(src_img, src_drw):
     _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
     # print(str(x1) + " " + str(y1) + " " + str(x2) + " " + str(y2))
     img = pdb.gimp_image_duplicate(src_img)
-    inp_layer = pdb.gimp_image_get_layer_by_name(img, 'Inpainting Mask')
+    inp_layer = pdb.gimp_image_get_layer_by_name(img, MASK_LAYER_NAME)
     if inp_layer:
         pdb.gimp_image_remove_layer(img, inp_layer)
     pdb.gimp_image_select_rectangle(img, 2, x1, y1, x2 - x1, y2 - y1)
@@ -56,14 +59,12 @@ def encode_init_img(src_img, src_drw):
 
 
 def encode_mask(src_img, src_drw):
-    src_inp_layer = pdb.gimp_image_get_layer_by_name(src_img, 'Inpainting Mask')
-    if not src_inp_layer:
-        raise Exception("Couldn't find layer called 'Inpainting Mask'")
-
+    if not pdb.gimp_image_get_layer_by_name(src_img, MASK_LAYER_NAME):
+        raise Exception("Couldn't find layer named '" + MASK_LAYER_NAME + "'")
     _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
     img = pdb.gimp_image_duplicate(src_img)
     for layer in img.layers:
-        pdb.gimp_item_set_visible(layer, layer.name == 'Inpainting Mask')
+        pdb.gimp_item_set_visible(layer, layer.name == MASK_LAYER_NAME)
     pdb.gimp_image_select_rectangle(img, 2, x1, y1, x2 - x1, y2 - y1)
     pdb.gimp_edit_copy_visible(img)
     mask_img = pdb.gimp_edit_paste_as_new_image()
@@ -101,7 +102,6 @@ def create_layers(img, drw, img_batch):
             tmp_sd_img_path = tmp_sd_img.name
             tmp_sd_img.write(base64.b64decode(encoded_sd_img.split(",", 1)[0]))
         sd_img = pdb.file_png_load(tmp_sd_img_path, tmp_sd_img_path)
-        # TODO use gimp-file-load-layer instead?
         sd_drw = pdb.gimp_image_active_drawable(sd_img)
         sd_layer = pdb.gimp_layer_new_from_drawable(sd_drw, img)
         sd_layer.name = 'sd_' + str(int(time()))
@@ -109,10 +109,10 @@ def create_layers(img, drw, img_batch):
         _, x, y, _, _ = pdb.gimp_selection_bounds(img)
         pdb.gimp_layer_set_offsets(sd_layer, x, y)
         pdb.gimp_image_delete(sd_img)
-    inp_layer = pdb.gimp_image_get_layer_by_name(img, 'Inpainting Mask')
-    if inp_layer:
-        pdb.gimp_image_raise_item_to_top(img, inp_layer)
-        pdb.gimp_item_set_visible(inp_layer, False)
+    mask_layer = pdb.gimp_image_get_layer_by_name(img, MASK_LAYER_NAME)
+    if mask_layer:
+        pdb.gimp_image_raise_item_to_top(img, mask_layer)
+        pdb.gimp_item_set_visible(mask_layer, False)
 
 
 def make_extras_request_data(**kwargs):
@@ -164,30 +164,38 @@ def create_api_request_from_gimp_params(**kwargs):
     elif kwargs['mode'] == 'EXTRAS':
         uri = 'sdapi/v1/extra-single-image'
         req_data = make_extras_request_data(**kwargs)
-    return urllib2.Request(url=kwargs['api_base_url'] + "/" + str(uri),
-                           headers={'Content-Type': 'application/json'},
-                           data=json.dumps(req_data))
+    url = kwargs['api_base_url'] + ('/' if not kwargs['api_base_url'].endswith('/') else '') + uri
+    print(url)
+    return urllib2.Request(url=url, headers={'Content-Type': 'application/json'}, data=json.dumps(req_data))
 
 
 def run(*args, **kwargs):
+    img = kwargs['image']
     try:
         sd_request = create_api_request_from_gimp_params(**kwargs)
-        # with open('/var/folders/_g/x2n28ygx3ts8lk5c_16b3rrr0000gn/T/tmpEO5Sw_.png') as png:
-        #     tmp_sd_img = png.read()
-        with open('/var/folders/_g/x2n28ygx3ts8lk5c_16b3rrr0000gn/T/tmpEO5Sw_.png', "rb") as img:
-            enc_tmp_img = 'whatever,' + base64.b64encode(img.read())
-        create_layers(kwargs['image'], kwargs['drawable'], [enc_tmp_img, enc_tmp_img])
-        return
+        print(sd_request.get_full_url())
+        # # with open('/var/folders/_g/x2n28ygx3ts8lk5c_16b3rrr0000gn/T/tmpEO5Sw_.png') as png:
+        # #     tmp_sd_img = png.read()
+        # with open('/private/var/folders/_g/x2n28ygx3ts8lk5c_16b3rrr0000gn/T/tmpYRJ2gI.png', "rb") as img:
+        #     # 'data:image/png;base64,' + base64.b64encode(img.read())
+        #     # enc_tmp_img = 'data:image/png;base64,' + base64.b64encode(img.read())
+        #     enc_tmp_img = base64.b64encode(img.read())
+        # print(len(enc_tmp_img))
+        # print(enc_tmp_img[:40])
+        # create_layers(kwargs['image'], kwargs['drawable'], [enc_tmp_img, enc_tmp_img])
+        # return
         sd_result = json.loads(urllib2.urlopen(sd_request).read())
         if kwargs['mode'] == 'EXTRAS':
             generated_images = [sd_result['image']]
         else:
             generated_images = sd_result['images']
+        img.undo_group_start()
         if IMG_TARGET[kwargs['img_target']] == 'Images':
             open_as_images(generated_images)
         elif IMG_TARGET[kwargs['img_target']] == 'Layers':
             # TODO: Put layer to right position
             create_layers(kwargs['image'], kwargs['drawable'], generated_images)
+        img.undo_group_end()
     except urllib2.HTTPError as e:
         print(e)
         print(e.read())
