@@ -20,9 +20,11 @@ import os, sys
 import ssl
 import json
 import math
+from time import sleep
 from time import time as time  #beauty
 import base64
 import urllib2
+from threading import Thread
 import tempfile
 import gimpfu
 from gimpfu import *
@@ -183,8 +185,17 @@ def add_inpainting_params(req_data, **kwargs):
     req_data['inpaint_full_res_padding'] = kwargs['inpaint_full_res_padding']
     return req_data
 
+class ApiRequest(Thread):
+        def __init__(self, url, req_data):
+            Thread.__init__(self)
+            self.url = url
+            self.req_data = req_data
 
-def create_api_request_from_gimp_params(**kwargs):
+        def run(self):
+            self.data = urllib2.Request(url=url, headers={'Content-Type': 'application/json'}, data=json.dumps(req_data))
+
+
+def api_request_from_gimp_params(**kwargs):
     if kwargs['mode'] == 'TXT2IMG':
         uri = 'sdapi/v1/txt2img'
         req_data = make_generation_request_data(**kwargs)
@@ -204,7 +215,18 @@ def create_api_request_from_gimp_params(**kwargs):
         req_data['image'] = encode_init_img(kwargs['image'], kwargs['x'], kwargs['y'], kwargs['width'],
                                             kwargs['height'])
     url = kwargs['api_base_url'] + ('/' if not kwargs['api_base_url'].endswith('/') else '') + uri
-    return urllib2.Request(url=url, headers={'Content-Type': 'application/json'}, data=json.dumps(req_data))
+    print(url)
+    t = ApiRequest(url, req_data,)
+    t.start()
+    while t.data is None:
+        sleep(2)
+        progress = progress + 0.01
+        gimp.progress_update(progress)
+        if progress > 100:
+            raise Error('Timeout')
+
+    t.join()
+    return t.data
 
 
 def run(*args, **kwargs):
@@ -212,7 +234,11 @@ def run(*args, **kwargs):
     try:
         x, y, width, height = determine_active_area(kwargs['image'], kwargs['autofit_inpainting'])
         sd_request = create_api_request_from_gimp_params(x=x, y=y, width=width, height=height, **kwargs)
-        sd_result = json.loads(urllib2.urlopen(sd_request).read())
+
+        gimp.progress_init('Processing')
+        
+        sd_result = api_request_from_gimp_params(**kwargs)
+        
         if kwargs['mode'] == 'EXTRAS':
             generated_images = [sd_result['image']]
         else:
@@ -223,9 +249,13 @@ def run(*args, **kwargs):
         elif IMG_TARGET[kwargs['img_target']] == 'Layers':
             create_layers(kwargs['image'], generated_images, x, y)
         img.undo_group_end()
-    except urllib2.HTTPError as e:
+        gimp.progress_update(100)
+    except Exception as e:
+        gimp.progress_update(0)
         print(e)
         print(e.read())
+        gimpfu.gimp.message(str(e)) # Show message on error console
+        raise e
 
 
 def run_txt2img(*args, **kwargs):
