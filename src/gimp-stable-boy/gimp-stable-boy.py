@@ -26,10 +26,13 @@ import tempfile
 import gimpfu
 from gimpfu import *
 
-# Fixes relative imports in windows
+# Fix relative imports in Windows
 path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, path)
 from params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS
+
+
+MASK_LAYER_NAME = 'Inpainting Mask'
 
 
 def encode_png(img_path):
@@ -38,32 +41,38 @@ def encode_png(img_path):
 
 
 def encode_init_img(src_img, src_drw):
+    _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
+    # print(str(x1) + " " + str(y1) + " " + str(x2) + " " + str(y2))
     img = pdb.gimp_image_duplicate(src_img)
-    inp_layer = pdb.gimp_image_get_layer_by_name(img, 'Inpainting Mask')
+    inp_layer = pdb.gimp_image_get_layer_by_name(img, MASK_LAYER_NAME)
     if inp_layer:
         pdb.gimp_image_remove_layer(img, inp_layer)
-    flattened_img_layer = pdb.gimp_image_flatten(img)
+    pdb.gimp_image_select_rectangle(img, 2, x1, y1, x2 - x1, y2 - y1)
+    pdb.gimp_edit_copy_visible(img)
+    sel_img = pdb.gimp_edit_paste_as_new_image()
     tmp_init_img_path = tempfile.mktemp(suffix='.png')
-    pdb.file_png_save_defaults(img, flattened_img_layer, tmp_init_img_path, tmp_init_img_path)
+    pdb.file_png_save_defaults(sel_img, sel_img.layers[0], tmp_init_img_path, tmp_init_img_path)
     encoded_init_img = encode_png(tmp_init_img_path)
-    print('init img:' + tmp_init_img_path)
+    # print('init img: ' + tmp_init_img_path)
     os.remove(tmp_init_img_path)
     return encoded_init_img
 
 
-def encode_mask(img, drw):
-    mask_img = pdb.gimp_image_new(img.width, img.height, 0)
-    src_inp_layer = pdb.gimp_image_get_layer_by_name(img, 'Inpainting Mask')
-    if not src_inp_layer:
-        raise Exception("Couldn't find layer called 'Inpainting Mask'")
-    inp_layer = pdb.gimp_layer_new_from_drawable(src_inp_layer, mask_img)
-    pdb.gimp_item_set_visible(inp_layer, True)
-    pdb.gimp_layer_flatten(inp_layer)
-    mask_img.add_layer(inp_layer, 1)
+def encode_mask(src_img, src_drw):
+    if not pdb.gimp_image_get_layer_by_name(src_img, MASK_LAYER_NAME):
+        raise Exception("Couldn't find layer named '" + MASK_LAYER_NAME + "'")
+    _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
+    img = pdb.gimp_image_duplicate(src_img)
+    for layer in img.layers:
+        pdb.gimp_item_set_visible(layer, layer.name == MASK_LAYER_NAME)
+    pdb.gimp_image_select_rectangle(img, 2, x1, y1, x2 - x1, y2 - y1)
+    pdb.gimp_edit_copy_visible(img)
+    mask_img = pdb.gimp_edit_paste_as_new_image()
+    pdb.gimp_layer_flatten(mask_img.layers[0])
     mask_img_path = tempfile.mktemp(suffix='.png')
-    pdb.file_png_save_defaults(mask_img, inp_layer, mask_img_path, mask_img_path)
+    pdb.file_png_save_defaults(mask_img, mask_img.layers[0], mask_img_path, mask_img_path)
     encoded_mask = encode_png(mask_img_path)
-    print('mask img:' + mask_img_path)
+    # print('mask img: ' + mask_img_path)
     os.remove(mask_img_path)
     return encoded_mask
 
@@ -78,7 +87,7 @@ def open_as_images(images):
         gimp_img = pdb.file_png_load(tmp_img_path, tmp_img_path)
         # TODO: add "Inpainting" layer?
         pdb.gimp_display_new(gimp_img)
-        # os.remove(tmp_img_path)
+        os.remove(tmp_img_path)
 
 
 def create_layers(img, drw, img_batch):
@@ -87,16 +96,18 @@ def create_layers(img, drw, img_batch):
             tmp_sd_img_path = tmp_sd_img.name
             tmp_sd_img.write(base64.b64decode(encoded_sd_img.split(",", 1)[0]))
         sd_img = pdb.file_png_load(tmp_sd_img_path, tmp_sd_img_path)
-        # TODO use gimp-file-load-layer instead?
         sd_drw = pdb.gimp_image_active_drawable(sd_img)
         sd_layer = pdb.gimp_layer_new_from_drawable(sd_drw, img)
         sd_layer.name = 'sd_' + str(int(time()))
         img.add_layer(sd_layer, 0)
+        _, x, y, _, _ = pdb.gimp_selection_bounds(img)
+        pdb.gimp_layer_set_offsets(sd_layer, x, y)
         pdb.gimp_image_delete(sd_img)
-    inp_layer = pdb.gimp_image_get_layer_by_name(img, 'Inpainting Mask')
-    if inp_layer:
-        pdb.gimp_image_raise_item_to_top(img, inp_layer)
-        pdb.gimp_item_set_visible(inp_layer, False)
+        os.remove(tmp_sd_img_path)
+    mask_layer = pdb.gimp_image_get_layer_by_name(img, MASK_LAYER_NAME)
+    if mask_layer:
+        pdb.gimp_image_raise_item_to_top(img, mask_layer)
+        pdb.gimp_item_set_visible(mask_layer, False)
 
 
 def make_extras_request_data(**kwargs):
@@ -107,6 +118,7 @@ def make_extras_request_data(**kwargs):
 
 
 def make_generation_request_data(**kwargs):
+    _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(kwargs['image'])
     return {
         'prompt': kwargs['prompt'],
         'negative_prompt': kwargs['negative_prompt'],
@@ -116,6 +128,8 @@ def make_generation_request_data(**kwargs):
         'cfg_scale': kwargs['cfg_scale'],
         'seed': kwargs['seed'],
         'restore_faces': kwargs['restore_faces'],
+        'width': x2 - x1,
+        'height': y2 - y1,
     }
 
 
@@ -148,12 +162,13 @@ def create_api_request_from_gimp_params(**kwargs):
     elif kwargs['mode'] == 'EXTRAS':
         uri = 'sdapi/v1/extra-single-image'
         req_data = make_extras_request_data(**kwargs)
-    return urllib2.Request(url=kwargs['api_base_url'] + "/" + str(uri),
-                           headers={'Content-Type': 'application/json'},
-                           data=json.dumps(req_data))
+    url = kwargs['api_base_url'] + ('/' if not kwargs['api_base_url'].endswith('/') else '') + uri
+    print(url)
+    return urllib2.Request(url=url, headers={'Content-Type': 'application/json'}, data=json.dumps(req_data))
 
 
 def run(*args, **kwargs):
+    img = kwargs['image']
     try:
         sd_request = create_api_request_from_gimp_params(**kwargs)
         sd_result = json.loads(urllib2.urlopen(sd_request).read())
@@ -161,10 +176,12 @@ def run(*args, **kwargs):
             generated_images = [sd_result['image']]
         else:
             generated_images = sd_result['images']
+        img.undo_group_start()
         if IMG_TARGET[kwargs['img_target']] == 'Images':
             open_as_images(generated_images)
         elif IMG_TARGET[kwargs['img_target']] == 'Layers':
             create_layers(kwargs['image'], kwargs['drawable'], generated_images)
+        img.undo_group_end()
     except urllib2.HTTPError as e:
         print(e)
         print(e.read())

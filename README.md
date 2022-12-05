@@ -12,10 +12,11 @@
 
 [AUTOMATIC1111's Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) is one of the most powerful tools in the generative AI space. Stable Boy puts that power into GIMP 2.10 by calling into A1111 WebUI's API.
 
-Here's a short demo video of what Stable Boy can do at the moment:
+Here's a short demo video:
 
 [![A short demo](./public/images/demo-video-screenshot.png)](https://youtu.be/YMVog30OcTI)
 
+(Not shown: 🆕 Using rectangular selections to select the region that Stable Diffusion will process. See Usage below.)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -51,11 +52,31 @@ Here's a short demo video of what Stable Boy can do at the moment:
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-For inpainting to work you will need to add a layer with name "`Inpainting Mask`" to the image (see video). Loading an inpainting model in A1111's WebUI would also be a good idea.
+### Generate images or layers
 
-**Note:** Stable Boy doesn't have an option to choose the model. You'll have to do that in WebUI.
+Stable Boy can open the results coming from Stable Diffusion either as new images or as new layers in the current image. Using layers is very powerful, especially when inpainting large images.
 
-(More documentation to come.)
+### 🆕 Support for Rectangle Selection tool
+
+Use rectangular selections for selecting the region that Stable Diffusion will process. This makes it possible to work with images of arbitrary size. Note that **the selection's width and height need to be multiples of 8**. Think `512x512`, `512x768`, `1024x768`, that kinda thing.
+
+> 👉 Using GIMP's fixed-size rectangular selections makes this easy.
+
+When there is no selection, Stable Boy will process the full image. (Therefore image sizes should also be multiples of 8.)
+
+> ❗️ Make sure your selected region is completely within the image.
+
+### Inpainting
+
+Add a layer named `Inpainting Mask` to the image (see video) and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer.
+
+Stable Boy will insert any generated layers under the inpainting mask layer and hide the mask layer. The mask itself remains as is.
+
+> 👉 Select the mask layer and hit `DEL` to clear the mask.
+
+### Model selection
+
+Stable Boy does not have an option to choose the model. You'll have to do that in WebUI. Loading an inpainting model in A1111's WebUI is also recommended.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -64,8 +85,8 @@ For inpainting to work you will need to add a layer with name "`Inpainting Mask`
 <!-- ROADMAP -->
 ## Roadmap
 
+- [X] Rectangular selections as image sources for each mode
 - [ ] Outpainting
-- [ ] Rectangular selections as image sources for each mode
 - [ ] Better GUI
 - [ ] Support for more options
 - [ ] Better documentation
