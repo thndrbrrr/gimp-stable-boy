@@ -246,9 +246,8 @@ def run(*args, **kwargs):
     img = kwargs['image']
     try:
         x, y, width, height = determine_active_area(kwargs['image'], kwargs['autofit_inpainting'])
-        sd_request = create_api_request_from_gimp_params(x=x, y=y, width=width, height=height, **kwargs)
         gimp.progress_init('Waiting for server')
-        sd_result = api_request_from_gimp_params(**kwargs)
+        sd_result = api_request_from_gimp_params(x=x, y=y, width=width, height=height, **kwargs)
         
         if kwargs['mode'] == 'EXTRAS':
             generated_images = [sd_result['image']]
