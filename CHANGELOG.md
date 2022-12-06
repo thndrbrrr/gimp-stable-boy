@@ -1,10 +1,10 @@
 # Changelog
 
-## v0.3 (2022-12-XXXXXXXX)
+## v0.3 (2022-12-06)
 
 ### New and improved
 
-- Inpainting automatically determines area to process based on where mask position
+- Inpainting automatically determines area to process based on mask position
 - Ability to choose upscaler settings
 
 ## v0.2 (2022-12-04)
