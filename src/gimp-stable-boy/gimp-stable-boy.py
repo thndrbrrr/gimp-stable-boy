@@ -21,6 +21,7 @@ import ssl
 import json
 import math
 from time import sleep
+from time import time as current_time
 from time import time as time  #beauty
 import base64
 import urllib2
@@ -35,6 +36,7 @@ path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, path)
 from params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS
 
+REQUEST_TIMEOUT_SECONDS = 10
 
 __version__ = '0.3'
 
@@ -193,8 +195,12 @@ class ApiRequest(Thread):
             self.req_data = req_data
 
         def run(self):
-            self.data = urllib2.Request(url=url, headers={'Content-Type': 'application/json'}, data=json.dumps(req_data))
-
+            gimpfu.gimp.message('ping')
+            self.data = urllib2.Request(url=os.path.join(self.kwargs['api_base_url'], self.uri),
+                           headers={'Content-Type': 'application/json'},
+                           data=json.dumps(self.req_data))
+            gimpfu.gimp.message(str(self.data))
+            gimpfu.gimp.message('pong')
 
 def api_request_from_gimp_params(**kwargs):
     if kwargs['mode'] == 'TXT2IMG':
@@ -215,17 +221,19 @@ def api_request_from_gimp_params(**kwargs):
         req_data = make_extras_request_data(**kwargs)
         req_data['image'] = encode_init_img(kwargs['image'], kwargs['x'], kwargs['y'], kwargs['width'],
                                             kwargs['height'])
+                                            
     url = kwargs['api_base_url'] + ('/' if not kwargs['api_base_url'].endswith('/') else '') + uri
     print(url)
     t = ApiRequest(url, req_data,)
     t.start()
-    while t.data is None:
+    request_start_time = current_time()
+    while hasattr(t, 'data'):
         sleep(2)
-        if progress < 100:
-            progress = progress + 0.01
-        gimp.progress_update(progress)
-        if progress > 100:
-            raise Error('Timeout')
+        time_spent = current_time() - request_start_time
+        percent_time_spent_until_timeout = time_spent / REQUEST_TIMEOUT_SECONDS
+        gimp.progress_update(percent_time_spent_until_timeout)
+        if time_spent > REQUEST_TIMEOUT_SECONDS:
+            raise Exception('Timeout')
 
     t.join()
     return t.data
