@@ -26,6 +26,8 @@ SAMPLERS = [
 
 INPAINTING_FILL = ['Fill', 'Original', 'Latent noise', 'Latent nothing']
 
+UPSCALERS = ['None', 'Lanczos', 'Nearest', 'LDSR', 'ESRGAN_4x', 'SwinIR_4x', 'ScuNET', 'ScuNET PSNR']
+
 GIMP_PARAMS = {
     'TXT2IMG': [
         (gimpfu.PF_STRING, "prompt", "Prompt", ""),
@@ -61,6 +63,7 @@ GIMP_PARAMS = {
         (gimpfu.PF_BOOL, "restore_faces", "Restore faces", False),
         (gimpfu.PF_SLIDER, "cfg_scale", "CFG", 7.5, (0, 20, 0.5)),
         (gimpfu.PF_SLIDER, "denoising_strength", "Denoising strength %", 50.0, (0, 100, 1)),
+        (gimpfu.PF_BOOL, "autofit_inpainting", "Autofit inpainting region", True),
         (gimpfu.PF_SLIDER, "mask_blur", "Mask blur", 4, (0, 32, 1)),
         (gimpfu.PF_OPTION, "inpainting_fill", "Inpainting fill", 1, INPAINTING_FILL),
         (gimpfu.PF_BOOL, "inpaint_full_res", "Inpaint at full resolution", True),
@@ -72,6 +75,9 @@ GIMP_PARAMS = {
     'EXTRAS': [
         # (gimpfu.PF_OPTION, "resize_mode", "Resize mode", 0, RESIZE_MODES),
         (gimpfu.PF_SLIDER, "upscaling_resize", "Upscaling factor", 2, (1, 4, 1)),
+        (gimpfu.PF_OPTION, "upscaler_1", "Upscaler 1", 0, UPSCALERS),
+        (gimpfu.PF_OPTION, "upscaler_2", "Upscaler 2", 0, UPSCALERS),
+        (gimpfu.PF_SLIDER, "extras_upscaler_2_visibility", "Upscaler 2 visibility", 0, (0, 1, 0.1)),
         (gimpfu.PF_STRING, "api_base_url", "API URL", "http://localhost:7860"),
     ]
 }

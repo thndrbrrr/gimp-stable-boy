@@ -52,6 +52,10 @@ Here's a short demo video:
 <!-- USAGE EXAMPLES -->
 ## Usage
 
+### Image size
+
+The minimum resolution is 512x512.
+
 ### Generate images or layers
 
 Stable Boy can open the results coming from Stable Diffusion either as new images or as new layers in the current image. Using layers is very powerful, especially when inpainting large images.
@@ -68,7 +72,7 @@ When there is no selection, Stable Boy will process the full image. (Therefore i
 
 ### Inpainting
 
-Add a layer named `Inpainting Mask` to the image (see video) and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer.
+Add a layer named `Inpainting Mask` to the image (see video) and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer. Stable Boy will automatically determine the area of the image to process.
 
 Stable Boy will insert any generated layers under the inpainting mask layer and hide the mask layer. The mask itself remains as is.
 
