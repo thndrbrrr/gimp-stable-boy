@@ -192,18 +192,19 @@ class ApiRequest(Thread):
             Thread.__init__(self)
             self.url = url
             self.req_data = req_data
+            self.waiting_request = True
 
         def run(self):
-            gimpfu.gimp.message('ping')
-            gimpfu.gimp.message(self.url)
-            gimpfu.gimp.message(str(self.data))
-            sd_request = urllib2.Request(url=self.url, headers={'Content-Type': 'application/json'}, data=json.dumps(self.req_data))
-            gimpfu.gimp.message('ping2')
-            sd_response = urllib2.urlopen(sd_request)
-            gimpfu.gimp.message('ping3')
-            self.data = json.loads(sd_response.read())
-            gimpfu.gimp.message(str(self.data))
-            gimpfu.gimp.message('pong')
+            try:
+                sd_request = urllib2.Request(url=self.url, headers={'Content-Type': 'application/json'}, data=json.dumps(self.req_data))
+                sd_response = urllib2.urlopen(sd_request)
+                self.data = json.loads(sd_response.read())
+                self.waiting_request = False
+            except Exception as e:
+                gimpfu.gimp.message(str(e))
+                gimpfu.gimp.message(str(self.url))
+                gimpfu.gimp.message(str(json.dumps(self.req_data)))
+                self.request_error = e
 
 def api_request_from_gimp_params(**kwargs):
     if kwargs['mode'] == 'TXT2IMG':
@@ -227,10 +228,11 @@ def api_request_from_gimp_params(**kwargs):
                                             
     url = kwargs['api_base_url'] + ('/' if not kwargs['api_base_url'].endswith('/') else '') + uri
     print(url)
-    t = ApiRequest(url, req_data,)
+
+    t = ApiRequest(url, req_data)
     t.start()
     request_start_time = current_time()
-    while not hasattr(t, 'data'):
+    while t.waiting_request:
         sleep(2)
         time_spent = current_time() - request_start_time
         percent_time_spent_until_timeout = time_spent / REQUEST_TIMEOUT_SECONDS
@@ -239,6 +241,8 @@ def api_request_from_gimp_params(**kwargs):
             raise Exception('Timeout waiting server.')
 
     t.join()
+    if hasattr(t, 'request_error'):
+        raise t.request_error
     return t.data
 
 
