@@ -24,6 +24,7 @@ from time import sleep
 from time import time as time  #beauty
 import base64
 import urllib2
+import gtk
 from threading import Thread
 import tempfile
 import gimpfu
@@ -220,7 +221,8 @@ def api_request_from_gimp_params(**kwargs):
     t.start()
     while t.data is None:
         sleep(2)
-        progress = progress + 0.01
+        if progress < 100:
+            progress = progress + 0.01
         gimp.progress_update(progress)
         if progress > 100:
             raise Error('Timeout')
@@ -234,8 +236,7 @@ def run(*args, **kwargs):
     try:
         x, y, width, height = determine_active_area(kwargs['image'], kwargs['autofit_inpainting'])
         sd_request = create_api_request_from_gimp_params(x=x, y=y, width=width, height=height, **kwargs)
-
-        gimp.progress_init('Processing')
+        gimp.progress_init('Waiting for server')
         
         sd_result = api_request_from_gimp_params(**kwargs)
         
@@ -253,9 +254,18 @@ def run(*args, **kwargs):
     except Exception as e:
         gimp.progress_update(0)
         print(e)
-        print(e.read())
         gimpfu.gimp.message(str(e)) # Show message on error console
-        raise e
+        dialog = gtk.MessageDialog(
+            None,
+            gtk.DIALOG_MODAL,
+            gtk.MESSAGE_INFO,
+            gtk.BUTTONS_OK,
+            str(e),
+        )
+
+        # Display the dialog and wait for the user to dismiss it
+        response = dialog.run()
+        return
 
 
 def run_txt2img(*args, **kwargs):
