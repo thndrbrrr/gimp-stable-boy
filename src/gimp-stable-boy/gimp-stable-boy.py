@@ -32,6 +32,8 @@ sys.path.insert(1, path)
 from params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS
 
 
+__version__ = '0.3'
+
 MASK_LAYER_NAME = 'Inpainting Mask'
 
 
@@ -216,19 +218,19 @@ def run_extras(*args, **kwargs):
 
 
 if __name__ == '__main__':
-    gimpfu.register("stable-boy-txt2img", "Stable Boy - Text to Image",
+    gimpfu.register("stable-boy-txt2img", "Stable Boy " + __version__ + " - Text to Image",
                     "Stable Diffusion plugin that uses AUTOMATIC1111's webgui API", "Torben Giesselmann",
                     "Torben Giesselmann", "2022", "<Image>/Stable Boy/Text to Image", "*", GIMP_PARAMS['TXT2IMG'], [],
                     run_txt2img)
-    gimpfu.register("stable-boy-img2img", "Stable Boy - Image to Image",
+    gimpfu.register("stable-boy-img2img", "Stable Boy " + __version__ + " - Image to Image",
                     "Stable Diffusion plugin that uses AUTOMATIC1111's webgui API", "Torben Giesselmann",
                     "Torben Giesselmann", "2022", "<Image>/Stable Boy/Image to Image", "*", GIMP_PARAMS['IMG2IMG'], [],
                     run_img2img)
-    gimpfu.register("stable-boy-inpaint", "Stable Boy - Inpainting",
+    gimpfu.register("stable-boy-inpaint", "Stable Boy " + __version__ + " - Inpainting",
                     "Stable Diffusion plugin that uses AUTOMATIC1111's webgui API", "Torben Giesselmann",
                     "Torben Giesselmann", "2022", "<Image>/Stable Boy/Inpainting", "*", GIMP_PARAMS['INPAINTING'], [],
                     run_inpainting)
-    gimpfu.register("stable-boy-extras", "Stable Boy - Extras",
+    gimpfu.register("stable-boy-extras", "Stable Boy " + __version__ + " - Extras",
                     "Stable Diffusion plugin that uses AUTOMATIC1111's webgui API", "Torben Giesselmann",
                     "Torben Giesselmann", "2022", "<Image>/Stable Boy/Extras", "*", GIMP_PARAMS['EXTRAS'], [],
                     run_extras)
