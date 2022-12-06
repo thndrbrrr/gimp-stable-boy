@@ -61,6 +61,7 @@ GIMP_PARAMS = {
         (gimpfu.PF_BOOL, "restore_faces", "Restore faces", False),
         (gimpfu.PF_SLIDER, "cfg_scale", "CFG", 7.5, (0, 20, 0.5)),
         (gimpfu.PF_SLIDER, "denoising_strength", "Denoising strength %", 50.0, (0, 100, 1)),
+        (gimpfu.PF_BOOL, "autofit_inpainting", "Autofit inpainting region", True),
         (gimpfu.PF_SLIDER, "mask_blur", "Mask blur", 4, (0, 32, 1)),
         (gimpfu.PF_OPTION, "inpainting_fill", "Inpainting fill", 1, INPAINTING_FILL),
         (gimpfu.PF_BOOL, "inpaint_full_res", "Inpaint at full resolution", True),

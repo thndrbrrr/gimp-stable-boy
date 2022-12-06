@@ -19,6 +19,7 @@
 import os, sys
 import ssl
 import json
+import math
 from time import time as time  #beauty
 import base64
 import urllib2
@@ -40,40 +41,82 @@ def encode_png(img_path):
         return 'data:image/png;base64,' + base64.b64encode(img.read())
 
 
-def encode_init_img(src_img, src_drw):
-    _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
+def autofit_inpainting_area(src_img):
+    if not pdb.gimp_image_get_layer_by_name(src_img, MASK_LAYER_NAME):
+        raise Exception("Couldn't find layer named '" + MASK_LAYER_NAME + "'")
+    img = pdb.gimp_image_duplicate(src_img)
+    mask_layer = pdb.gimp_image_get_layer_by_name(img, MASK_LAYER_NAME)
+    pdb.plug_in_autocrop_layer(img, mask_layer)
+    mask_center_x = mask_layer.offsets[0] + int(mask_layer.width / 2)
+    mask_center_y = mask_layer.offsets[1] + int(mask_layer.height / 2)
+    target_width = math.ceil(float(mask_layer.width) / 256) * 256
+    target_height = math.ceil(float(mask_layer.height) / 256) * 256
+    if target_width < 512:
+        target_width = 512
+    if target_height < 512:
+        target_height = 512
+    x, y = mask_center_x - target_width / 2, mask_center_y - target_height / 2
+    if x + target_width > img.width:
+        x = img.width - target_width
+    if y + target_height > img.height:
+        y = img.height - target_height
+    if mask_center_x - target_width / 2 < 0:
+        x = 0
+    if mask_center_y - target_height / 2 < 0:
+        y = 0
+    return x, y, target_width, target_height
+
+
+def determine_active_area(img, autofit_inpainting=False):
+    _, x, y, x2, y2 = pdb.gimp_selection_bounds(img)
+    width = x2 - x
+    height = y2 - y
+    # TODO: should a rectangular selection override autofit?
+    if autofit_inpainting:
+        x, y, width, height = autofit_inpainting_area(img)
+    return x, y, width, height
+
+
+def encode_init_img(src_img, x, y, width, height):
+    # _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
     # print(str(x1) + " " + str(y1) + " " + str(x2) + " " + str(y2))
+
+    # x, y, width, height = determine_active_area(src_img, autofit_inpainting)
+
     img = pdb.gimp_image_duplicate(src_img)
     inp_layer = pdb.gimp_image_get_layer_by_name(img, MASK_LAYER_NAME)
     if inp_layer:
         pdb.gimp_image_remove_layer(img, inp_layer)
-    pdb.gimp_image_select_rectangle(img, 2, x1, y1, x2 - x1, y2 - y1)
+    pdb.gimp_image_select_rectangle(img, 2, x, y, width, height)
     pdb.gimp_edit_copy_visible(img)
     sel_img = pdb.gimp_edit_paste_as_new_image()
     tmp_init_img_path = tempfile.mktemp(suffix='.png')
     pdb.file_png_save_defaults(sel_img, sel_img.layers[0], tmp_init_img_path, tmp_init_img_path)
     encoded_init_img = encode_png(tmp_init_img_path)
-    # print('init img: ' + tmp_init_img_path)
-    os.remove(tmp_init_img_path)
+    print('init img: ' + tmp_init_img_path)
+    # os.remove(tmp_init_img_path)
     return encoded_init_img
 
 
-def encode_mask(src_img, src_drw):
+def encode_mask(src_img, x, y, width, height):
     if not pdb.gimp_image_get_layer_by_name(src_img, MASK_LAYER_NAME):
         raise Exception("Couldn't find layer named '" + MASK_LAYER_NAME + "'")
-    _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
+    # _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
+
+    # x, y, width, height = determine_active_area(src_img, autofit_inpainting)
+
     img = pdb.gimp_image_duplicate(src_img)
     for layer in img.layers:
         pdb.gimp_item_set_visible(layer, layer.name == MASK_LAYER_NAME)
-    pdb.gimp_image_select_rectangle(img, 2, x1, y1, x2 - x1, y2 - y1)
+    pdb.gimp_image_select_rectangle(img, 2, x, y, width, height)
     pdb.gimp_edit_copy_visible(img)
     mask_img = pdb.gimp_edit_paste_as_new_image()
     pdb.gimp_layer_flatten(mask_img.layers[0])
     mask_img_path = tempfile.mktemp(suffix='.png')
     pdb.file_png_save_defaults(mask_img, mask_img.layers[0], mask_img_path, mask_img_path)
     encoded_mask = encode_png(mask_img_path)
-    # print('mask img: ' + mask_img_path)
-    os.remove(mask_img_path)
+    print('mask img: ' + mask_img_path)
+    # os.remove(mask_img_path)
     return encoded_mask
 
 
@@ -90,8 +133,8 @@ def open_as_images(images):
         os.remove(tmp_img_path)
 
 
-def create_layers(img, drw, img_batch):
-    for encoded_sd_img in img_batch:
+def create_layers(img, images, x, y):
+    for encoded_sd_img in images:
         with open(tempfile.mktemp(suffix='.png'), 'wb') as tmp_sd_img:
             tmp_sd_img_path = tmp_sd_img.name
             tmp_sd_img.write(base64.b64decode(encoded_sd_img.split(",", 1)[0]))
@@ -100,7 +143,6 @@ def create_layers(img, drw, img_batch):
         sd_layer = pdb.gimp_layer_new_from_drawable(sd_drw, img)
         sd_layer.name = 'sd_' + str(int(time()))
         img.add_layer(sd_layer, 0)
-        _, x, y, _, _ = pdb.gimp_selection_bounds(img)
         pdb.gimp_layer_set_offsets(sd_layer, x, y)
         pdb.gimp_image_delete(sd_img)
         os.remove(tmp_sd_img_path)
@@ -135,7 +177,7 @@ def make_generation_request_data(**kwargs):
 
 def add_img2img_params(req_data, **kwargs):
     req_data['denoising_strength'] = float(kwargs['denoising_strength']) / 100
-    req_data['init_images'] = [encode_init_img(kwargs['image'], kwargs['drawable'])]
+    # req_data['init_images'] = [encode_init_img(kwargs['image'], kwargs['drawable'])]
     return req_data
 
 
@@ -145,7 +187,7 @@ def add_inpainting_params(req_data, **kwargs):
     req_data['mask_blur'] = kwargs['mask_blur']
     req_data['inpaint_full_res'] = kwargs['inpaint_full_res']
     req_data['inpaint_full_res_padding'] = kwargs['inpaint_full_res_padding']
-    req_data['mask'] = encode_mask(kwargs['image'], kwargs['drawable'])
+    # req_data['mask'] = encode_mask(kwargs['image'], kwargs['drawable'], kwargs['autofit_inpainting'])
     return req_data
 
 
@@ -157,8 +199,13 @@ def create_api_request_from_gimp_params(**kwargs):
         uri = 'sdapi/v1/img2img'
         req_data = make_generation_request_data(**kwargs)
         req_data = add_img2img_params(req_data, **kwargs)
+
+        req_data['init_images'] = [
+            encode_init_img(kwargs['image'], kwargs['x'], kwargs['y'], kwargs['width'], kwargs['height'])
+        ]
         if kwargs['mode'] == 'INPAINTING':
             req_data = add_inpainting_params(req_data, **kwargs)
+            req_data['mask'] = encode_mask(kwargs['image'], kwargs['x'], kwargs['y'], kwargs['width'], kwargs['height'])
     elif kwargs['mode'] == 'EXTRAS':
         uri = 'sdapi/v1/extra-single-image'
         req_data = make_extras_request_data(**kwargs)
@@ -170,7 +217,8 @@ def create_api_request_from_gimp_params(**kwargs):
 def run(*args, **kwargs):
     img = kwargs['image']
     try:
-        sd_request = create_api_request_from_gimp_params(**kwargs)
+        x, y, width, height = determine_active_area(kwargs['image'], kwargs['autofit_inpainting'])
+        sd_request = create_api_request_from_gimp_params(x=x, y=y, width=width, height=height, **kwargs)
         sd_result = json.loads(urllib2.urlopen(sd_request).read())
         if kwargs['mode'] == 'EXTRAS':
             generated_images = [sd_result['image']]
@@ -180,7 +228,7 @@ def run(*args, **kwargs):
         if IMG_TARGET[kwargs['img_target']] == 'Images':
             open_as_images(generated_images)
         elif IMG_TARGET[kwargs['img_target']] == 'Layers':
-            create_layers(kwargs['image'], kwargs['drawable'], generated_images)
+            create_layers(kwargs['image'], generated_images, x, y)
         img.undo_group_end()
     except urllib2.HTTPError as e:
         print(e)
@@ -190,12 +238,14 @@ def run(*args, **kwargs):
 def run_txt2img(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['TXT2IMG']), args)))
     kwargs['mode'] = 'TXT2IMG'
+    kwargs['autofit_inpainting'] = False
     run(args, **kwargs)
 
 
 def run_img2img(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['IMG2IMG']), args)))
     kwargs['mode'] = 'IMG2IMG'
+    kwargs['autofit_inpainting'] = False
     run(args, **kwargs)
 
 
@@ -209,6 +259,7 @@ def run_extras(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['EXTRAS']), args)))
     kwargs['mode'] = 'EXTRAS'
     kwargs['img_target'] = 1
+    kwargs['autofit_inpainting'] = False
     run(args, **kwargs)
 
 
