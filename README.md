@@ -85,7 +85,8 @@ Stable Boy does not have an option to choose the model. You'll have to do that i
 <!-- ROADMAP -->
 ## Roadmap
 
-- [X] Rectangular selections as image sources for each mode
+- [X] 🟢 ~~Rectangular selections as image sources for each mode~~
+- [ ] 🟡 Inpainting on large images: Stable Boy determines the region to send to Stable Diffusion based on where you painted the mask (WIP)
 - [ ] Outpainting
 - [ ] Better GUI
 - [ ] Support for more options
@@ -142,6 +143,7 @@ In the end, everyone stands on the shoulders of giants.
 * [GIMP](https://www.gimp.org/)
 * [blueturtleai's gimp-stable-diffusion](https://github.com/blueturtleai/gimp-stable-diffusion)
 * [Stack Overflow](https://stackoverflow.com/)
+* [Daniel Alcalde Puente](https://github.com/danielalcalde)
 * [Othneil Drew](https://github.com/othneildrew)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
