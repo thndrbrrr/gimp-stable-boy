@@ -73,18 +73,13 @@ def determine_active_area(img, autofit_inpainting=False):
     _, x, y, x2, y2 = pdb.gimp_selection_bounds(img)
     width = x2 - x
     height = y2 - y
-    # TODO: should a rectangular selection override autofit?
+    # TODO: should an active rectangular selection override autofit?
     if autofit_inpainting:
         x, y, width, height = autofit_inpainting_area(img)
     return x, y, width, height
 
 
 def encode_init_img(src_img, x, y, width, height):
-    # _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
-    # print(str(x1) + " " + str(y1) + " " + str(x2) + " " + str(y2))
-
-    # x, y, width, height = determine_active_area(src_img, autofit_inpainting)
-
     img = pdb.gimp_image_duplicate(src_img)
     inp_layer = pdb.gimp_image_get_layer_by_name(img, MASK_LAYER_NAME)
     if inp_layer:
@@ -103,10 +98,6 @@ def encode_init_img(src_img, x, y, width, height):
 def encode_mask(src_img, x, y, width, height):
     if not pdb.gimp_image_get_layer_by_name(src_img, MASK_LAYER_NAME):
         raise Exception("Couldn't find layer named '" + MASK_LAYER_NAME + "'")
-    # _, x1, y1, x2, y2 = pdb.gimp_selection_bounds(src_img)
-
-    # x, y, width, height = determine_active_area(src_img, autofit_inpainting)
-
     img = pdb.gimp_image_duplicate(src_img)
     for layer in img.layers:
         pdb.gimp_item_set_visible(layer, layer.name == MASK_LAYER_NAME)
@@ -160,7 +151,6 @@ def make_extras_request_data(**kwargs):
         'upscaler_1': UPSCALERS[kwargs['upscaler_1']],
         'upscaler_2': UPSCALERS[kwargs['upscaler_2']],
         'extras_upscaler_2_visibility': kwargs['extras_upscaler_2_visibility'],
-        'image': encode_init_img(kwargs['image'], kwargs['drawable']),
     }
 
 
@@ -182,7 +172,6 @@ def make_generation_request_data(**kwargs):
 
 def add_img2img_params(req_data, **kwargs):
     req_data['denoising_strength'] = float(kwargs['denoising_strength']) / 100
-    # req_data['init_images'] = [encode_init_img(kwargs['image'], kwargs['drawable'])]
     return req_data
 
 
@@ -192,7 +181,6 @@ def add_inpainting_params(req_data, **kwargs):
     req_data['mask_blur'] = kwargs['mask_blur']
     req_data['inpaint_full_res'] = kwargs['inpaint_full_res']
     req_data['inpaint_full_res_padding'] = kwargs['inpaint_full_res_padding']
-    # req_data['mask'] = encode_mask(kwargs['image'], kwargs['drawable'], kwargs['autofit_inpainting'])
     return req_data
 
 
@@ -204,7 +192,6 @@ def create_api_request_from_gimp_params(**kwargs):
         uri = 'sdapi/v1/img2img'
         req_data = make_generation_request_data(**kwargs)
         req_data = add_img2img_params(req_data, **kwargs)
-
         req_data['init_images'] = [
             encode_init_img(kwargs['image'], kwargs['x'], kwargs['y'], kwargs['width'], kwargs['height'])
         ]
@@ -214,8 +201,9 @@ def create_api_request_from_gimp_params(**kwargs):
     elif kwargs['mode'] == 'EXTRAS':
         uri = 'sdapi/v1/extra-single-image'
         req_data = make_extras_request_data(**kwargs)
+        req_data['image'] = encode_init_img(kwargs['image'], kwargs['x'], kwargs['y'], kwargs['width'],
+                                            kwargs['height'])
     url = kwargs['api_base_url'] + ('/' if not kwargs['api_base_url'].endswith('/') else '') + uri
-    print(url)
     return urllib2.Request(url=url, headers={'Content-Type': 'application/json'}, data=json.dumps(req_data))
 
 
@@ -270,20 +258,16 @@ def run_extras(*args, **kwargs):
 
 if __name__ == '__main__':
     gimpfu.register("stable-boy-txt2img", "Stable Boy " + __version__ + " - Text to Image",
-                    "Stable Diffusion plugin that uses AUTOMATIC1111's webgui API", "Torben Giesselmann",
-                    "Torben Giesselmann", "2022", "<Image>/Stable Boy/Text to Image", "*", GIMP_PARAMS['TXT2IMG'], [],
-                    run_txt2img)
+                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
+                    "2022", "<Image>/Stable Boy/Text to Image", "*", GIMP_PARAMS['TXT2IMG'], [], run_txt2img)
     gimpfu.register("stable-boy-img2img", "Stable Boy " + __version__ + " - Image to Image",
-                    "Stable Diffusion plugin that uses AUTOMATIC1111's webgui API", "Torben Giesselmann",
-                    "Torben Giesselmann", "2022", "<Image>/Stable Boy/Image to Image", "*", GIMP_PARAMS['IMG2IMG'], [],
-                    run_img2img)
+                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
+                    "2022", "<Image>/Stable Boy/Image to Image", "*", GIMP_PARAMS['IMG2IMG'], [], run_img2img)
     gimpfu.register("stable-boy-inpaint", "Stable Boy " + __version__ + " - Inpainting",
-                    "Stable Diffusion plugin that uses AUTOMATIC1111's webgui API", "Torben Giesselmann",
-                    "Torben Giesselmann", "2022", "<Image>/Stable Boy/Inpainting", "*", GIMP_PARAMS['INPAINTING'], [],
-                    run_inpainting)
+                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
+                    "2022", "<Image>/Stable Boy/Inpainting", "*", GIMP_PARAMS['INPAINTING'], [], run_inpainting)
     gimpfu.register("stable-boy-extras", "Stable Boy " + __version__ + " - Extras",
-                    "Stable Diffusion plugin that uses AUTOMATIC1111's webgui API", "Torben Giesselmann",
-                    "Torben Giesselmann", "2022", "<Image>/Stable Boy/Extras", "*", GIMP_PARAMS['EXTRAS'], [],
-                    run_extras)
+                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
+                    "2022", "<Image>/Stable Boy/Extras", "*", GIMP_PARAMS['EXTRAS'], [], run_extras)
     ssl._create_default_https_context = ssl._create_unverified_context
     gimpfu.main()
