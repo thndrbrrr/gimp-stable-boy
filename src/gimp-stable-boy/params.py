@@ -26,6 +26,8 @@ SAMPLERS = [
 
 INPAINTING_FILL = ['Fill', 'Original', 'Latent noise', 'Latent nothing']
 
+UPSCALERS = ['None', 'Lanczos', 'Nearest', 'LDSR', 'ESRGAN_4x', 'SwinIR_4x', 'ScuNET', 'ScuNET PSNR']
+
 GIMP_PARAMS = {
     'TXT2IMG': [
         (gimpfu.PF_STRING, "prompt", "Prompt", ""),
@@ -72,6 +74,9 @@ GIMP_PARAMS = {
     'EXTRAS': [
         # (gimpfu.PF_OPTION, "resize_mode", "Resize mode", 0, RESIZE_MODES),
         (gimpfu.PF_SLIDER, "upscaling_resize", "Upscaling factor", 2, (1, 4, 1)),
+        (gimpfu.PF_OPTION, "upscaler_1", "Upscaler 1", 0, UPSCALERS),
+        (gimpfu.PF_OPTION, "upscaler_2", "Upscaler 2", 0, UPSCALERS),
+        (gimpfu.PF_SLIDER, "extras_upscaler_2_visibility", "Upscaler 2 visibility", 0, (0, 1, 0.1)),
         (gimpfu.PF_STRING, "api_base_url", "API URL", "http://localhost:7860"),
     ]
 }

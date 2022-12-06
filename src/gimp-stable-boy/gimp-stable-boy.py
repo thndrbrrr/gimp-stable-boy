@@ -29,7 +29,7 @@ from gimpfu import *
 # Fix relative imports in Windows
 path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, path)
-from params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS
+from params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS
 
 
 MASK_LAYER_NAME = 'Inpainting Mask'
@@ -113,6 +113,9 @@ def create_layers(img, drw, img_batch):
 def make_extras_request_data(**kwargs):
     return {
         'upscaling_resize': int(kwargs['upscaling_resize']),
+        'upscaler_1': UPSCALERS[kwargs['upscaler_1']],
+        'upscaler_2': UPSCALERS[kwargs['upscaler_2']],
+        'extras_upscaler_2_visibility': kwargs['extras_upscaler_2_visibility'],
         'image': encode_init_img(kwargs['image'], kwargs['drawable']),
     }
 
