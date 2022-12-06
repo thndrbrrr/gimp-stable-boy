@@ -239,6 +239,9 @@ def api_request_from_gimp_params(**kwargs):
         gimp.progress_update(percent_time_spent_until_timeout)
         if time_spent > REQUEST_TIMEOUT_SECONDS:
             raise Exception('Timeout waiting server.')
+        if hasattr(t, 'request_error'):
+            t.join()
+            raise t.request_error
 
     t.join()
     if hasattr(t, 'request_error'):
