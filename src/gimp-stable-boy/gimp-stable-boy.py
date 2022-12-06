@@ -36,12 +36,11 @@ path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, path)
 from params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS
 
-REQUEST_TIMEOUT_SECONDS = 10
+REQUEST_TIMEOUT_SECONDS = 40
 
 __version__ = '0.3'
 
 MASK_LAYER_NAME = 'Inpainting Mask'
-
 
 def encode_png(img_path):
     with open(img_path, "rb") as img:
@@ -196,9 +195,13 @@ class ApiRequest(Thread):
 
         def run(self):
             gimpfu.gimp.message('ping')
-            self.data = urllib2.Request(url=os.path.join(self.kwargs['api_base_url'], self.uri),
-                           headers={'Content-Type': 'application/json'},
-                           data=json.dumps(self.req_data))
+            gimpfu.gimp.message(self.url)
+            gimpfu.gimp.message(str(self.data))
+            sd_request = urllib2.Request(url=self.url, headers={'Content-Type': 'application/json'}, data=json.dumps(self.req_data))
+            gimpfu.gimp.message('ping2')
+            sd_response = urllib2.urlopen(sd_request)
+            gimpfu.gimp.message('ping3')
+            self.data = json.loads(sd_response.read())
             gimpfu.gimp.message(str(self.data))
             gimpfu.gimp.message('pong')
 
@@ -227,13 +230,13 @@ def api_request_from_gimp_params(**kwargs):
     t = ApiRequest(url, req_data,)
     t.start()
     request_start_time = current_time()
-    while hasattr(t, 'data'):
+    while not hasattr(t, 'data'):
         sleep(2)
         time_spent = current_time() - request_start_time
         percent_time_spent_until_timeout = time_spent / REQUEST_TIMEOUT_SECONDS
         gimp.progress_update(percent_time_spent_until_timeout)
         if time_spent > REQUEST_TIMEOUT_SECONDS:
-            raise Exception('Timeout')
+            raise Exception('Timeout waiting server.')
 
     t.join()
     return t.data
@@ -245,7 +248,6 @@ def run(*args, **kwargs):
         x, y, width, height = determine_active_area(kwargs['image'], kwargs['autofit_inpainting'])
         sd_request = create_api_request_from_gimp_params(x=x, y=y, width=width, height=height, **kwargs)
         gimp.progress_init('Waiting for server')
-        
         sd_result = api_request_from_gimp_params(**kwargs)
         
         if kwargs['mode'] == 'EXTRAS':
