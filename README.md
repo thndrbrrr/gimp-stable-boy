@@ -28,10 +28,10 @@ Here's a short demo video:
    git clone https://github.com/tgiesselmann/gimp-stable-boy.git
    ```
 2. Start GIMP
-3. Add the absolute path to _sub-folder_ (!) `src/gimp-stable-boy` to GIMP's plugin search path:
+3. Add the absolute path to _sub-folder_ (!) `src/gimp_stable_boy` to GIMP's plugin search path:
    ```
-   /home/...and-so-on.../gimp-stable-boy/src/gimp-stable-boy     # MacOS, Linux
-   C:/Users/...and-so-on.../gimp-stable-boy/src/gimp-stable-boy  # Windows
+   /home/...and-so-on.../gimp-stable-boy/src/gimp_stable_boy     # MacOS, Linux
+   C:/Users/...and-so-on.../gimp-stable-boy/src/gimp_stable_boy  # Windows
    ```
    ![GIMP Preferences](public/images/gimp-prefs-plugin-path.png)
 4. Restart GIMP.
