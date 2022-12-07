@@ -17,6 +17,8 @@
 import gimpfu
 
 
+MODES = ['TXT2IMG', 'IMG2IMG', 'INPAINTING', 'EXTRAS']
+
 IMAGE_TARGETS = ['Layers', 'Images']
 
 SAMPLERS = [
