@@ -33,7 +33,7 @@ sys.path.insert(1, path)
 from gimp_params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS
 
 
-__version__ = '0.3'
+__version__ = '0.3.1'
 
 MASK_LAYER_NAME = 'Inpainting Mask'
 
