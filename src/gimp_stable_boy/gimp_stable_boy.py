@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#
 # Stable Boy
 # Copyright (C) 2022 Torben Giesselmann
 #
@@ -20,10 +20,12 @@ import os, sys
 import ssl
 import json
 import math
-from time import time as time  #beauty
+from time import time as time, sleep  #beauty
+from threading import Thread
 import base64
-import urllib2
+from urllib2 import Request, urlopen, URLError
 import tempfile
+import gtk
 import gimpfu
 from gimpfu import *
 
@@ -33,31 +35,40 @@ sys.path.insert(1, path)
 from gimp_params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS
 
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
+TIMEOUT_FACTOR = 1
 MASK_LAYER_NAME = 'Inpainting Mask'
 
 
-class StableDiffusionCommand:
+class StableDiffusionCommand(Thread):
     uri = ''
+    status = 'INITIALIZED'
 
     def __init__(self, **kwargs):
+        Thread.__init__(self)
         self.img = kwargs['image']
         self.x, self.y, self.width, self.height = self._determine_active_area()
         print('x, y, w, h: ' + str(self.x) + ', ' + str(self.y) + ', ' + str(self.width) + ', ' + str(self.height))
         self.req_data = self._make_request_data(**kwargs)
+        self.timeout = self._estimate_timeout(self.req_data)
         self.url = kwargs['api_base_url'] + ('/' if not kwargs['api_base_url'].endswith('/') else '') + self.uri
 
     def run(self):
-        sd_result = self._run_http_request()
-        self.images = sd_result['images']
+        self.status = 'RUNNING'
+        try:
+            sd_request = Request(url=self.url,
+                                 headers={'Content-Type': 'application/json'},
+                                 data=json.dumps(self.req_data))
+            self.sd_resp = urlopen(sd_request)
+            self._process_http_response(self.sd_resp)
+            self.status = 'DONE'
+        except URLError as e:
+            self.status = 'ERROR'
+            self.error_msg = e.reason
 
-    def _run_http_request(self):
-        sd_request = urllib2.Request(url=self.url,
-                                     headers={'Content-Type': 'application/json'},
-                                     data=json.dumps(self.req_data))
-        sd_result = json.loads(urllib2.urlopen(sd_request).read())
-        return sd_result
+    def _process_http_response(self, resp):
+        self.images = json.loads(resp.read())['images']
 
     def _determine_active_area(self):
         _, x, y, x2, y2 = pdb.gimp_selection_bounds(self.img)
@@ -76,6 +87,12 @@ class StableDiffusionCommand:
             'width': self.width,
             'height': self.height,
         }
+
+    def _estimate_timeout(self, req_data):
+        timeout = int(int(req_data['steps']) * int(req_data['batch_size']) * TIMEOUT_FACTOR)
+        if req_data['restore_faces']:
+            timeout = int(timeout * 1.2 * TIMEOUT_FACTOR)
+        return timeout
 
     def _encode_img(self):
         img_cpy = pdb.gimp_image_duplicate(self.img)
@@ -189,9 +206,11 @@ class ExtrasCommand(StableDiffusionCommand):
             'image': self._encode_img(),
         }
 
-    def run(self):
-        sd_result = self._run_http_request()
-        self.images = [sd_result['image']]
+    def _estimate_timeout(self, req_data):
+        return (60 if float(req_data['extras_upscaler_2_visibility']) > 0 else 30) * TIMEOUT_FACTOR
+
+    def _process_http_response(self, resp):
+        self.images = [json.loads(resp.read())['image']]
 
 
 ########################################################################################################################
@@ -216,11 +235,8 @@ def create_layers(target_img, images, x, y):
     for encoded_img in images:
         tmp_png_path = decode_png(encoded_img)
         img = pdb.file_png_load(tmp_png_path, tmp_png_path)
-        print('layer img: ' + tmp_png_path)
         lyr = pdb.gimp_layer_new_from_drawable(img.layers[0], target_img)
         lyr.name = 'sd_' + str(int(time()))
-        print(lyr)
-        print(target_img)
         target_img.add_layer(lyr, 0)
         pdb.gimp_layer_set_offsets(lyr, x, y)
         pdb.gimp_image_delete(img)
@@ -232,13 +248,31 @@ def create_layers(target_img, images, x, y):
 
 
 def run(cmd, img_target):
-    cmd.img.undo_group_start()
-    cmd.run()
-    if img_target == 'Images':
-        open_as_images(cmd.images)
-    elif img_target == 'Layers':
-        create_layers(cmd.img, cmd.images, cmd.x, cmd.y)
-    cmd.img.undo_group_end()
+    try:
+        gimp.progress_init('Processing ...')
+        request_start_time = time()
+        cmd.start()
+        while cmd.status == 'RUNNING':
+            sleep(1)
+            time_spent = time() - request_start_time
+            gimp.progress_update(time_spent / float(cmd.timeout))
+            if time_spent > cmd.timeout:
+                raise Exception('Timed out waiting for response')
+        gimp.progress_update(100)
+        cmd.join()
+        if cmd.status == 'DONE':
+            cmd.img.undo_group_start()
+            if img_target == 'Images':
+                open_as_images(cmd.images)
+            elif img_target == 'Layers':
+                create_layers(cmd.img, cmd.images, cmd.x, cmd.y)
+            cmd.img.undo_group_end()
+        elif cmd.status == 'ERROR':
+            raise Exception(cmd.error_msg)
+    except Exception as e:
+        print(e)
+        dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
+        dialog.run()
 
 
 def run_txt2img(*args, **kwargs):
@@ -256,8 +290,8 @@ def run_inpainting(*args, **kwargs):
     run(InpaintingCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
 
 
-def run_extras(*args, **kwargs):
-    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['EXTRAS']), args)))
+def run_upscale(*args, **kwargs):
+    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['UPSCALE']), args)))
     run(ExtrasCommand(**kwargs), img_target='Images')
 
 
@@ -271,8 +305,8 @@ if __name__ == '__main__':
     gimpfu.register("stable-boy-inpaint", "Stable Boy " + __version__ + " - Inpainting",
                     "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
                     "2022", "<Image>/Stable Boy/Inpainting", "*", GIMP_PARAMS['INPAINTING'], [], run_inpainting)
-    gimpfu.register("stable-boy-extras", "Stable Boy " + __version__ + " - Extras",
+    gimpfu.register("stable-boy-upscale", "Stable Boy " + __version__ + " - Upscale",
                     "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
-                    "2022", "<Image>/Stable Boy/Extras", "*", GIMP_PARAMS['EXTRAS'], [], run_extras)
+                    "2022", "<Image>/Stable Boy/Upscale", "*", GIMP_PARAMS['UPSCALE'], [], run_upscale)
     ssl._create_default_https_context = ssl._create_unverified_context
     gimpfu.main()
