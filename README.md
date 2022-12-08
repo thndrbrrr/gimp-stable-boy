@@ -33,12 +33,7 @@ Here's a short demo video:
    C:/Users/...and-so-on.../gimp-stable-boy/src/gimp_stable_boy  # Windows
    ```
    ![GIMP Preferences](public/images/gimp-prefs-plugin-path.png)
-1. Restart GIMP and create a new file with a reasonable size, like `512x512`.
-1. Stable Boy can be found in the `Stable Boy` top menu, with the following options:
-   1. Text to Image
-   2. Image to Image
-   3. Inpainting
-   4. Extras (for upscaling)
+1. Restart GIMP.
 1. Start A1111 WebUI with argument `--api`. It doesn't matter whether it's running on your local machine or somewhere in the cloud.
 1. Copy-paste A1111 WebUI's URL (something like `https://abcdef123.gradio.com`) into the `API URL` field. (For the time being you'll have to do that once for every generation option.)
 
@@ -49,6 +44,12 @@ Here's a short demo video:
 
 <!-- USAGE EXAMPLES -->
 ## Usage
+
+Stable Boy can be found in the `Stable Boy` top menu, with the following options:
+- Text to Image
+- Image to Image
+- Inpainting
+- Upscale
 
 ### Image size
 
