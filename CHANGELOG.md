@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.3.2
+
+### New and improved
+
+- Updated available samplers
+- Progress bar updates while request is running and timeouts are handled
+- Renamed "Extras" to "Upscale"
+
+## v0.3.1
+
+### New and improved
+
+- Internal refactoring
+
 ## v0.3 (2022-12-06)
 
 ### New and improved
