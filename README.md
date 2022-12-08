@@ -149,6 +149,7 @@ In the end, everyone stands on the shoulders of giants.
 * [blueturtleai's gimp-stable-diffusion](https://github.com/blueturtleai/gimp-stable-diffusion)
 * [Stack Overflow](https://stackoverflow.com/)
 * [Daniel Alcalde Puente](https://github.com/danielalcalde)
+* [beothorn](https://github.com/beothorn)
 * [Othneil Drew](https://github.com/othneildrew)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
