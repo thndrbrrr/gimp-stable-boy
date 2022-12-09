@@ -42,7 +42,7 @@ GIMP_PARAMS = {
         (gimpfu.PF_SLIDER, 'cfg_scale', 'CFG', 7.5, (0, 20, 0.5)),
         (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
         (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, IMAGE_TARGETS),
-        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7860'),
+        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7861'),
     ],
     'IMG2IMG': [
         (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
@@ -55,7 +55,7 @@ GIMP_PARAMS = {
         (gimpfu.PF_SLIDER, 'denoising_strength', 'Denoising strength %', 50.0, (0, 100, 1)),
         (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
         (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, IMAGE_TARGETS),
-        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7860'),
+        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7861'),
     ],
     'INPAINTING': [
         (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
@@ -73,7 +73,7 @@ GIMP_PARAMS = {
         (gimpfu.PF_INT, 'inpaint_full_res_padding', 'Full res. inpainting padding', 0),
         (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
         (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, IMAGE_TARGETS),
-        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7860'),
+        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7861'),
     ],
     'UPSCALE': [
         # (gimpfu.PF_OPTION, 'resize_mode', 'Resize mode', 0, RESIZE_MODES),
@@ -81,6 +81,6 @@ GIMP_PARAMS = {
         (gimpfu.PF_OPTION, 'upscaler_1', 'Upscaler 1', 0, UPSCALERS),
         (gimpfu.PF_OPTION, 'upscaler_2', 'Upscaler 2', 0, UPSCALERS),
         (gimpfu.PF_SLIDER, 'extras_upscaler_2_visibility', 'Upscaler 2 visibility', 0, (0, 1, 0.1)),
-        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7860'),
+        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7861'),
     ]
 }
