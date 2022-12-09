@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.3
+
+### New and improved
+
+- Improved timeout handling
+
 ## v0.3.2
 
 ### New and improved

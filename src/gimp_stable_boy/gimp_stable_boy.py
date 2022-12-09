@@ -24,6 +24,7 @@ from time import time as time, sleep  #beauty
 from threading import Thread
 import base64
 from urllib2 import Request, urlopen, URLError
+from httplib import HTTPException
 import tempfile
 import gtk
 import gimpfu
@@ -35,7 +36,7 @@ sys.path.insert(1, path)
 from gimp_params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS
 
 
-__version__ = '0.3.2'
+__version__ = '0.3.3'
 
 TIMEOUT_FACTOR = 1
 MASK_LAYER_NAME = 'Inpainting Mask'
@@ -60,9 +61,12 @@ class StableDiffusionCommand(Thread):
             sd_request = Request(url=self.url,
                                  headers={'Content-Type': 'application/json'},
                                  data=json.dumps(self.req_data))
-            self.sd_resp = urlopen(sd_request)
+            self.sd_resp = urlopen(sd_request, timeout=self.timeout)
             self._process_http_response(self.sd_resp)
             self.status = 'DONE'
+        except HTTPException as e:
+            self.status = 'ERROR'
+            self.error_msg = str(e)
         except URLError as e:
             self.status = 'ERROR'
             self.error_msg = e.reason
@@ -259,8 +263,8 @@ def run(cmd, img_target):
             if time_spent > cmd.timeout:
                 raise Exception('Timed out waiting for response')
         gimp.progress_update(100)
-        cmd.join()
         if cmd.status == 'DONE':
+            cmd.join()
             cmd.img.undo_group_start()
             if img_target == 'Images':
                 open_as_images(cmd.images)
