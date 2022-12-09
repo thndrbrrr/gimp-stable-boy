@@ -60,7 +60,7 @@ class StableDiffusionCommand(Thread):
             sd_request = Request(url=self.url,
                                  headers={'Content-Type': 'application/json'},
                                  data=json.dumps(self.req_data))
-            self.sd_resp = urlopen(sd_request, timeout=self.timeout)
+            self.sd_resp = urlopen(sd_request)
             self._process_http_response(self.sd_resp)
             self.status = 'DONE'
         except URLError as e:
@@ -116,18 +116,6 @@ class StableDiffusionCommand(Thread):
 
 class Txt2ImgCommand(StableDiffusionCommand):
     uri = 'sdapi/v1/txt2img'
-
-
-class Txt2ImgScriptCommand(StableDiffusionCommand):
-    uri = 'sdapi/v1/txt2img/script'
-
-    def _make_request_data(self, **kwargs):
-        rqd = StableDiffusionCommand._make_request_data(self, **kwargs)
-        rqd['steps'] = 1
-        return rqd
-
-    def _estimate_timeout(self, req_data):
-        return 600
 
 
 class Img2ImgCommand(StableDiffusionCommand):
@@ -259,30 +247,20 @@ def create_layers(target_img, images, x, y):
         pdb.gimp_item_set_visible(mask_layer, False)
 
 
-def run(cmd: Thread, img_target, api_base_url):
+def run(cmd, img_target):
     try:
-        status_url = api_base_url + ('/' if not api_base_url.endswith('/') else '') + 'sdapi/v1/progress'
         gimp.progress_init('Processing ...')
         request_start_time = time()
         cmd.start()
-        gimp.progress_update(25)
         while cmd.status == 'RUNNING':
-            status = json.loads(urlopen(status_url).read())
-            if status['progress'] >= 0.1:
-                timeout = request_start_time + status['eta_relative']
-                gimp.progress_init('Processing job ' + str(status['state']['job_no']) + ' of ' +
-                                   str(status['state']['job_count']))
-                gimp.progress_update(min(status['progress'] * 50, 75))
-            sleep(5)
-            # time_spent = time() - request_start_time
-            # gimp.progress_update(time_spent / float(cmd.timeout))
-            # gimp.progress_update(min(status['progress'] * 100, 90))
-            # if time_spent > cmd.timeout:
-            if time() > timeout:
+            sleep(1)
+            time_spent = time() - request_start_time
+            gimp.progress_update(time_spent / float(cmd.timeout))
+            if time_spent > cmd.timeout:
                 raise Exception('Timed out waiting for response')
         gimp.progress_update(100)
+        cmd.join()
         if cmd.status == 'DONE':
-            cmd.join()
             cmd.img.undo_group_start()
             if img_target == 'Images':
                 open_as_images(cmd.images)
@@ -299,21 +277,21 @@ def run(cmd: Thread, img_target, api_base_url):
 
 def run_txt2img(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['TXT2IMG']), args)))
-    run(Txt2ImgCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']], api_base_url=kwargs['api_base_url'])
+    run(Txt2ImgCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
 
 
 def run_img2img(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['IMG2IMG']), args)))
-    run(Img2ImgCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']], api_base_url=kwargs['api_base_url'])
+    run(Img2ImgCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
 
 
 def run_inpainting(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['INPAINTING']), args)))
-    run(InpaintingCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']], api_base_url=kwargs['api_base_url'])
+    run(InpaintingCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
 
 
 def run_upscale(*args, **kwargs):
-    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['UPSCALE']), args)), api_base_url=kwargs['api_base_url'])
+    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['UPSCALE']), args)))
     run(ExtrasCommand(**kwargs), img_target='Images')
 
 
