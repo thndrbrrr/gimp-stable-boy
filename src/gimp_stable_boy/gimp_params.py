@@ -31,8 +31,16 @@ INPAINTING_FILL = ['Fill', 'Original', 'Latent noise', 'Latent nothing']
 
 UPSCALERS = ['None', 'Lanczos', 'Nearest', 'LDSR', 'ESRGAN_4x', 'SwinIR_4x', 'ScuNET', 'ScuNET PSNR']
 
+SCRIPT_XY_PLOT_AXIS_OPTIONS = [
+    "Nothing", "Seed", "Var. seed", "Var. strength", "Steps", "CFG Scale", "Prompt S/R", "Prompt order", "Sampler",
+    "Checkpoint name", "Hypernetwork", "Hypernet str.", "Sigma Churn", "Sigma min", "Sigma max", "Sigma noise", "Eta",
+    "Clip skip", "Denoising", "Cond. Image Mask Weight"
+]
+
 GIMP_PARAMS = {
-    'TXT2IMG': [
+    'PREFERENCES': [
+        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7861'),
+    ], 'TXT2IMG': [
         (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
         (gimpfu.PF_STRING, 'negative_prompt', 'Negative prompt', ''),
         (gimpfu.PF_STRING, 'seed', 'Seed', '-1'),
@@ -42,9 +50,7 @@ GIMP_PARAMS = {
         (gimpfu.PF_SLIDER, 'cfg_scale', 'CFG', 7.5, (0, 20, 0.5)),
         (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
         (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, IMAGE_TARGETS),
-        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7861'),
-    ],
-    'IMG2IMG': [
+    ], 'IMG2IMG': [
         (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
         (gimpfu.PF_STRING, 'negative_prompt', 'Negative prompt', ''),
         (gimpfu.PF_STRING, 'seed', 'Seed', '-1'),
@@ -55,9 +61,7 @@ GIMP_PARAMS = {
         (gimpfu.PF_SLIDER, 'denoising_strength', 'Denoising strength %', 50.0, (0, 100, 1)),
         (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
         (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, IMAGE_TARGETS),
-        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7861'),
-    ],
-    'INPAINTING': [
+    ], 'INPAINTING': [
         (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
         (gimpfu.PF_STRING, 'negative_prompt', 'Negative prompt', ''),
         (gimpfu.PF_STRING, 'seed', 'Seed', '-1'),
@@ -73,14 +77,15 @@ GIMP_PARAMS = {
         (gimpfu.PF_INT, 'inpaint_full_res_padding', 'Full res. inpainting padding', 0),
         (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
         (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, IMAGE_TARGETS),
-        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7861'),
-    ],
-    'UPSCALE': [
-        # (gimpfu.PF_OPTION, 'resize_mode', 'Resize mode', 0, RESIZE_MODES),
+    ], 'UPSCALE': [
         (gimpfu.PF_SLIDER, 'upscaling_resize', 'Upscaling factor', 2, (1, 4, 1)),
         (gimpfu.PF_OPTION, 'upscaler_1', 'Upscaler 1', 0, UPSCALERS),
         (gimpfu.PF_OPTION, 'upscaler_2', 'Upscaler 2', 0, UPSCALERS),
         (gimpfu.PF_SLIDER, 'extras_upscaler_2_visibility', 'Upscaler 2 visibility', 0, (0, 1, 0.1)),
-        (gimpfu.PF_STRING, 'api_base_url', 'API URL', 'http://localhost:7861'),
+    ], 'SCRIPT_XY_PLOT': [
+        (gimpfu.PF_OPTION, 'x_type', 'X', 0, SCRIPT_XY_PLOT_AXIS_OPTIONS),
+        (gimpfu.PF_STRING, 'x_values', 'X values', ''),
+        (gimpfu.PF_OPTION, 'y_type', 'Y', 0, SCRIPT_XY_PLOT_AXIS_OPTIONS),
+        (gimpfu.PF_STRING, 'y_values', 'Y values', ''),
     ]
 }

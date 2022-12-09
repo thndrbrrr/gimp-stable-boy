@@ -29,6 +29,7 @@ import tempfile
 import gtk
 import gimpfu
 from gimpfu import *
+from gimpshelf import shelf
 
 # Fix relative imports in Windows
 path = os.path.dirname(os.path.abspath(__file__))
@@ -53,7 +54,8 @@ class StableDiffusionCommand(Thread):
         print('x, y, w, h: ' + str(self.x) + ', ' + str(self.y) + ', ' + str(self.width) + ', ' + str(self.height))
         self.req_data = self._make_request_data(**kwargs)
         self.timeout = self._estimate_timeout(self.req_data)
-        self.url = kwargs['api_base_url'] + ('/' if not kwargs['api_base_url'].endswith('/') else '') + self.uri
+        # assert (shelf.has_key['api_base_url'])
+        # self.url = shelf['api_base_url'] + ('/' if not shelf['api_base_url'].endswith('/') else '') + self.uri
 
     def run(self):
         self.status = 'RUNNING'
@@ -120,6 +122,16 @@ class StableDiffusionCommand(Thread):
 
 class Txt2ImgCommand(StableDiffusionCommand):
     uri = 'sdapi/v1/txt2img'
+
+
+class Txt2ImgScriptCommand(StableDiffusionCommand):
+    uri = 'sdapi/v1/txt2img/script'
+
+    def _make_request_data(self, **kwargs):
+        req_data = StableDiffusionCommand._make_request_data(self, **kwargs)
+        req_data['script_name'] = 'X/Y plot'
+        req_data['script_args'] = []
+        return req_data
 
 
 class Img2ImgCommand(StableDiffusionCommand):
@@ -252,6 +264,13 @@ def create_layers(target_img, images, x, y):
 
 
 def run(cmd, img_target):
+    if not shelf.has_key('api_base_url'):
+        dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+                                   "Please set API URL in Stable Boy's Preferences.")
+        dialog.run()
+        return
+    else:
+        cmd.url = shelf['api_base_url'] + ('/' if not shelf['api_base_url'].endswith('/') else '') + cmd.uri
     try:
         gimp.progress_init('Processing ...')
         request_start_time = time()
@@ -279,6 +298,12 @@ def run(cmd, img_target):
         dialog.run()
 
 
+def run_prefs(*args, **kwargs):
+    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['PREFERENCES']), args)))
+    for pref_key, pref_value in kwargs.items():
+        shelf[pref_key] = pref_value
+
+
 def run_txt2img(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['TXT2IMG']), args)))
     run(Txt2ImgCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
@@ -299,7 +324,15 @@ def run_upscale(*args, **kwargs):
     run(ExtrasCommand(**kwargs), img_target='Images')
 
 
+def run_txt2img_script_xy_plot(*args, **kwargs):
+    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['SCRIPT_XY_PLOT']), args)))
+    run(ExtrasCommand(**kwargs), img_target='Images')
+
+
 if __name__ == '__main__':
+    gimpfu.register("stable-boy-prefs", "Stable Boy " + __version__ + " - Preferences",
+                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
+                    "2022", "<Image>/Stable Boy/Preferences", "*", GIMP_PARAMS['PREFERENCES'], [], run_prefs)
     gimpfu.register("stable-boy-txt2img", "Stable Boy " + __version__ + " - Text to Image",
                     "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
                     "2022", "<Image>/Stable Boy/Text to Image", "*", GIMP_PARAMS['TXT2IMG'], [], run_txt2img)
@@ -312,5 +345,10 @@ if __name__ == '__main__':
     gimpfu.register("stable-boy-upscale", "Stable Boy " + __version__ + " - Upscale",
                     "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
                     "2022", "<Image>/Stable Boy/Upscale", "*", GIMP_PARAMS['UPSCALE'], [], run_upscale)
+    gimpfu.register("stable-boy-txt2img-script", "Stable Boy " + __version__ + " - Text to Image Script",
+                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
+                    "2022", "<Image>/Stable Boy/Scripts/Text to Image/X\/Y plot", "*", GIMP_PARAMS['SCRIPT_XY_PLOT'],
+                    [], run_txt2img_script_xy_plot)
+
     ssl._create_default_https_context = ssl._create_unverified_context
     gimpfu.main()
