@@ -82,10 +82,12 @@ GIMP_PARAMS = {
         (gimpfu.PF_OPTION, 'upscaler_1', 'Upscaler 1', 0, UPSCALERS),
         (gimpfu.PF_OPTION, 'upscaler_2', 'Upscaler 2', 0, UPSCALERS),
         (gimpfu.PF_SLIDER, 'extras_upscaler_2_visibility', 'Upscaler 2 visibility', 0, (0, 1, 0.1)),
-    ], 'SCRIPT_XY_PLOT': [
+    ], 'SCRIPT_TXT2IMG_XY_PLOT': [
         (gimpfu.PF_OPTION, 'x_type', 'X', 0, SCRIPT_XY_PLOT_AXIS_OPTIONS),
         (gimpfu.PF_STRING, 'x_values', 'X values', ''),
         (gimpfu.PF_OPTION, 'y_type', 'Y', 0, SCRIPT_XY_PLOT_AXIS_OPTIONS),
         (gimpfu.PF_STRING, 'y_values', 'Y values', ''),
+        (gimpfu.PF_BOOL, 'draw_legend', 'Draw legend', True),
+        (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, IMAGE_TARGETS),
     ]
 }
