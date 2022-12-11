@@ -88,6 +88,7 @@ GIMP_PARAMS = {
         (gimpfu.PF_OPTION, 'y_type', 'Y', 0, SCRIPT_XY_PLOT_AXIS_OPTIONS),
         (gimpfu.PF_STRING, 'y_values', 'Y values', ''),
         (gimpfu.PF_BOOL, 'draw_legend', 'Draw legend', True),
+        (gimpfu.PF_BOOL, 'no_fixed_seeds', 'No fixed seeds', False),
         (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, IMAGE_TARGETS),
     ]
 }

@@ -68,6 +68,7 @@ class StableDiffusionCommand(Thread):
                                  headers={'Content-Type': 'application/json'},
                                  data=json.dumps(self.req_data))
             print('======= request')
+            print(self.req_data)
             # self.sd_resp = urlopen(sd_request)
             self.sd_resp = urlopen(sd_request,
                                    timeout=(self.timeout if self.timeout else socket._GLOBAL_DEFAULT_TIMEOUT))
@@ -84,7 +85,8 @@ class StableDiffusionCommand(Thread):
         #     print('======= ERROR URL')
         #     self.error_msg = e.reason
         except Exception as e:
-            print(e.with_traceback())
+            print(e)
+            # print(e.with_traceback())
             self.status = 'ERROR'
             print('======= ERROR EXC')
             self.error_msg = str(e)
@@ -156,7 +158,13 @@ class Txt2ImgScriptCommand(StableDiffusionCommand):
         req_data['steps'] = 1
         req_data['script_name'] = 'X/Y plot'
         req_data['script_args'] = [
-            kwargs['x_type'], kwargs['x_values'], kwargs['y_type'], kwargs['y_values'], kwargs['draw_legend']
+            kwargs['x_type'],
+            kwargs['x_values'],
+            kwargs['y_type'],
+            kwargs['y_values'],
+            kwargs['draw_legend'],
+            True,  # include_lone_images
+            kwargs['no_fixed_seeds'],
         ]
         print(req_data)
         return req_data
@@ -366,6 +374,7 @@ def run_upscale(*args, **kwargs):
 def run_txt2img_script_xy_plot(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['SCRIPT_TXT2IMG_XY_PLOT']), args)))
     kwargs['script_name'] = 'X/Y plot'
+    print(kwargs)
     run(Txt2ImgScriptCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
 
 
