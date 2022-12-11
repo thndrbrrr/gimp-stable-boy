@@ -16,17 +16,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, sys
 import ssl
 import json
 import math
-import socket
-from time import time as time, sleep  #beauty
-from threading import Thread
 import base64
+import socket
+import hashlib
+import tempfile
+import os, re, sys
+from time import time, sleep
+from threading import Thread
 from urllib2 import Request, urlopen, URLError
 from httplib import HTTPException
-import tempfile
+from collections import namedtuple
 import gtk
 import gimpfu
 from gimpfu import *
@@ -35,7 +37,7 @@ from gimpshelf import shelf
 # Fix relative imports in Windows
 path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, path)
-from gimp_params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS
+from gimp_params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS, SCRIPT_XY_PLOT_AXIS_OPTIONS as SCRIPT_XY_PLOT_AXIS_OPTION
 
 
 __version__ = '0.3.3'
@@ -43,6 +45,8 @@ __version__ = '0.3.3'
 TIMEOUT_REQUESTS = False
 TIMEOUT_FACTOR = 1
 MASK_LAYER_NAME = 'Inpainting Mask'
+
+LayerResult = namedtuple('LayerResult', 'name img children')
 
 
 class StableDiffusionCommand(Thread):
@@ -55,11 +59,11 @@ class StableDiffusionCommand(Thread):
         self.img = kwargs['image']
         self.x, self.y, self.width, self.height = self._determine_active_area()
         print('x, y, w, h: ' + str(self.x) + ', ' + str(self.y) + ', ' + str(self.width) + ', ' + str(self.height))
+        if 'img_target' in kwargs:
+            self.img_target = IMG_TARGET[kwargs['img_target']]
         self.req_data = self._make_request_data(**kwargs)
         if TIMEOUT_REQUESTS:
             self.timeout = self._estimate_timeout(self.req_data)
-        # assert (shelf.has_key['api_base_url'])
-        # self.url = shelf['api_base_url'] + ('/' if not shelf['api_base_url'].endswith('/') else '') + self.uri
 
     def run(self):
         self.status = 'RUNNING'
@@ -67,32 +71,26 @@ class StableDiffusionCommand(Thread):
             sd_request = Request(url=self.url,
                                  headers={'Content-Type': 'application/json'},
                                  data=json.dumps(self.req_data))
-            print('======= request')
-            print(self.req_data)
-            # self.sd_resp = urlopen(sd_request)
+            # print(self.req_data)
             self.sd_resp = urlopen(sd_request,
                                    timeout=(self.timeout if self.timeout else socket._GLOBAL_DEFAULT_TIMEOUT))
-            print('======= response')
             self._process_http_response(self.sd_resp)
-            print('======= DONE')
             self.status = 'DONE'
-        # except HTTPException as e:
-        #     self.status = 'ERROR'
-        #     print('======= ERROR HTTP')
-        #     self.error_msg = str(e)
-        # except URLError as e:
-        #     self.status = 'ERROR'
-        #     print('======= ERROR URL')
-        #     self.error_msg = e.reason
         except Exception as e:
-            print(e)
-            # print(e.with_traceback())
             self.status = 'ERROR'
-            print('======= ERROR EXC')
             self.error_msg = str(e)
+            print(e)
 
     def _process_http_response(self, resp):
-        self.images = json.loads(resp.read())['images']
+
+        def _mk_short_hash(img):
+            return hashlib.sha1(img.encode("UTF-8")).hexdigest()[:7]
+
+        all_imgs = json.loads(resp.read())['images']
+        if self.img_target == 'Layers':
+            self.layers = [LayerResult(None, _mk_short_hash(img), img, None) for img in all_imgs]
+        elif self.img_target == 'Images':
+            self.images = all_imgs
 
     def _determine_active_area(self):
         _, x, y, x2, y2 = pdb.gimp_selection_bounds(self.img)
@@ -158,19 +156,42 @@ class Txt2ImgScriptCommand(StableDiffusionCommand):
         req_data['steps'] = 1
         req_data['script_name'] = 'X/Y plot'
         req_data['script_args'] = [
-            kwargs['x_type'],
-            kwargs['x_values'],
-            kwargs['y_type'],
-            kwargs['y_values'],
-            kwargs['draw_legend'],
-            True,  # include_lone_images
-            kwargs['no_fixed_seeds'],
+            kwargs['x_type'], kwargs['x_values'], kwargs['y_type'], kwargs['y_values'], kwargs['draw_legend'], True,
+            kwargs['no_fixed_seeds']
         ]
-        print(req_data)
+        # print(req_data)
         return req_data
+
+    def _process_http_response(self, resp):
+        r = json.loads(resp.read())
+        # with open('xy_resp.json', 'w') as resp_file:
+        #     resp_file.write(json.dumps(r))
+        all_imgs = r['images']
+        print("all_imgs: " + str(len(all_imgs)))
+        self.images = [all_imgs.pop(0)]  # grid is always a separate image
+        print('A ================================================')
+        x_label = SCRIPT_XY_PLOT_AXIS_OPTION[self.req_data['script_args'][0]]
+        y_label = SCRIPT_XY_PLOT_AXIS_OPTION[self.req_data['script_args'][2]]
+        parent_layer_group = LayerResult("X/Y plot: " + x_label + " / " + y_label, None, [])
+        for x in re.split('\s*,\s*', self.req_data['script_args'][1]):
+            print('B ================================================')
+            x_layer_group = LayerResult(x_label + ': ' + str(x), None, [])
+            parent_layer_group.children.append(x_layer_group)
+            for y in re.split('\s*,\s*', self.req_data['script_args'][3]):
+                print('C ================================================')
+                x_layer_group.children.append(LayerResult(str(x) + ' / ' + str(y), all_imgs.pop(0), None))
+        self.layers = [parent_layer_group]
 
     def _estimate_timeout(self, req_data):
         return 300
+
+    def run(self):
+        self.status = 'RUNNING'
+        print('X ================================================')
+        with open('xy_resp.json') as resp_file:
+            self._process_http_response(resp_file)
+        print('Y ================================================')
+        self.status = 'DONE'
 
 
 class Img2ImgCommand(StableDiffusionCommand):
@@ -278,31 +299,56 @@ def decode_png(encoded_png):
         return png_img_path
 
 
-def open_as_images(images):
-    for encoded_img in images:
-        tmp_png_path = decode_png(encoded_img)
-        img = pdb.file_png_load(tmp_png_path, tmp_png_path)
-        pdb.gimp_display_new(img)
-        os.remove(tmp_png_path)
+def open_images(images):
+    if images:
+        for encoded_img in images:
+            tmp_png_path = decode_png(encoded_img)
+            img = pdb.file_png_load(tmp_png_path, tmp_png_path)
+            pdb.gimp_display_new(img)
+            os.remove(tmp_png_path)
 
 
-def create_layers(target_img, images, x, y):
-    for encoded_img in images:
-        tmp_png_path = decode_png(encoded_img)
-        img = pdb.file_png_load(tmp_png_path, tmp_png_path)
-        lyr = pdb.gimp_layer_new_from_drawable(img.layers[0], target_img)
-        lyr.name = 'sd_' + str(int(time()))
-        target_img.add_layer(lyr, 0)
-        pdb.gimp_layer_set_offsets(lyr, x, y)
-        pdb.gimp_image_delete(img)
-        os.remove(tmp_png_path)
-    mask_layer = pdb.gimp_image_get_layer_by_name(target_img, MASK_LAYER_NAME)
-    if mask_layer:
-        pdb.gimp_image_raise_item_to_top(target_img, mask_layer)
-        pdb.gimp_item_set_visible(mask_layer, False)
+def create_layers(target_img, layers, x, y):
+
+    print('len layers:')
+    print(len(layers))
+
+    def _create_nested_layers(parent_layer, layers):
+        for layer in layers:
+            # print('=' * 40)
+            # print('layer.name: ' + layer.name)
+            # if layer.img:
+            #     print('has layer.img')
+            # else:
+            #     print('no layer.img')
+            # if layer.children:
+            #     print('len(layer.children):' + str(len(layer.children)))
+            # else:
+            #     print('no children')
+            if layer.children:
+                gimp_layer_group = pdb.gimp_layer_group_new(target_img)
+                gimp_layer_group.name = layer.name
+                pdb.gimp_image_insert_layer(target_img, gimp_layer_group, parent_layer, 0)
+                _create_nested_layers(gimp_layer_group, layer.children)
+            elif layer.img:
+                tmp_png_path = decode_png(layer.img)
+                png_img = pdb.file_png_load(tmp_png_path, tmp_png_path)
+                gimp_layer = pdb.gimp_layer_new_from_drawable(png_img.layers[0], target_img)
+                gimp_layer.name = layer.name
+                pdb.gimp_layer_set_offsets(gimp_layer, x, y)
+                pdb.gimp_image_insert_layer(target_img, gimp_layer, parent_layer, 0)
+                pdb.gimp_image_delete(png_img)
+                os.remove(tmp_png_path)
+
+    if layers:
+        _create_nested_layers(None, layers)
+        mask_layer = pdb.gimp_image_get_layer_by_name(target_img, MASK_LAYER_NAME)
+        if mask_layer:
+            pdb.gimp_image_raise_item_to_top(target_img, mask_layer)
+            pdb.gimp_item_set_visible(mask_layer, False)
 
 
-def run(cmd, img_target):
+def run(cmd):
     if not shelf.has_key('SB_PREFERENCES_api_base_url'):
         dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
                                    "Please set API URL in Stable Boy's preferences.")
@@ -311,7 +357,7 @@ def run(cmd, img_target):
     else:
         cmd.url = shelf['SB_PREFERENCES_api_base_url'] + ('/' if not shelf['SB_PREFERENCES_api_base_url'].endswith('/')
                                                           else '') + cmd.uri
-    try:
+        # try:
         gimp.progress_init('Processing ...')
         request_start_time = time()
         cmd.start()
@@ -323,20 +369,20 @@ def run(cmd, img_target):
                 if time_spent > cmd.timeout and TIMEOUT_REQUESTS:
                     raise Exception('Timed out waiting for response')
         gimp.progress_update(100)
+        print(cmd.status)
         if cmd.status == 'DONE':
             cmd.join()
             cmd.img.undo_group_start()
-            if img_target == 'Images':
-                open_as_images(cmd.images)
-            elif img_target == 'Layers':
-                create_layers(cmd.img, cmd.images, cmd.x, cmd.y)
+            create_layers(cmd.img, cmd.layers, cmd.x, cmd.y)
+            open_images(cmd.images)
             cmd.img.undo_group_end()
         elif cmd.status == 'ERROR':
             raise Exception(cmd.error_msg)
-    except Exception as e:
-        print(e)
-        dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
-        dialog.run()
+
+    # except Exception as e:
+    #     print(e)
+    #     dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
+    #     dialog.run()
 
 
 def save_prefs(group, **kwargs):
@@ -352,30 +398,30 @@ def run_prefs(*args, **kwargs):
 def run_txt2img(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['TXT2IMG']), args)))
     save_prefs('TXT2IMG', **kwargs)
-    run(Txt2ImgCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
+    run(Txt2ImgCommand(**kwargs))
 
 
 def run_img2img(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['IMG2IMG']), args)))
     save_prefs('IMG2IMG', **kwargs)
-    run(Img2ImgCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
+    run(Img2ImgCommand(**kwargs))
 
 
 def run_inpainting(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['INPAINTING']), args)))
-    run(InpaintingCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
+    run(InpaintingCommand(**kwargs))
 
 
 def run_upscale(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['UPSCALE']), args)))
-    run(ExtrasCommand(**kwargs), img_target='Images')
+    run(ExtrasCommand(**kwargs))
 
 
 def run_txt2img_script_xy_plot(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['SCRIPT_TXT2IMG_XY_PLOT']), args)))
     kwargs['script_name'] = 'X/Y plot'
     print(kwargs)
-    run(Txt2ImgScriptCommand(**kwargs), img_target=IMG_TARGET[kwargs['img_target']])
+    run(Txt2ImgScriptCommand(**kwargs))
 
 
 if __name__ == '__main__':
