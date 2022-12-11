@@ -57,6 +57,8 @@ class StableDiffusionCommand(Thread):
     def __init__(self, **kwargs):
         Thread.__init__(self)
         self.img = kwargs['image']
+        self.images = None
+        self.layers = None
         self.x, self.y, self.width, self.height = self._determine_active_area()
         print('x, y, w, h: ' + str(self.x) + ', ' + str(self.y) + ', ' + str(self.width) + ', ' + str(self.height))
         if 'img_target' in kwargs:
@@ -156,8 +158,8 @@ class Txt2ImgScriptCommand(StableDiffusionCommand):
         req_data['steps'] = 1
         req_data['script_name'] = 'X/Y plot'
         req_data['script_args'] = [
-            kwargs['x_type'], kwargs['x_values'], kwargs['y_type'], kwargs['y_values'], kwargs['draw_legend'], True,
-            kwargs['no_fixed_seeds']
+            kwargs['x_type'], kwargs['x_values'], kwargs['y_type'], kwargs['y_values'], kwargs['draw_legend'],
+            not kwargs['grid_only'], kwargs['no_fixed_seeds']
         ]
         # print(req_data)
         return req_data
@@ -167,18 +169,16 @@ class Txt2ImgScriptCommand(StableDiffusionCommand):
         # with open('xy_resp.json', 'w') as resp_file:
         #     resp_file.write(json.dumps(r))
         all_imgs = r['images']
-        print("all_imgs: " + str(len(all_imgs)))
         self.images = [all_imgs.pop(0)]  # grid is always a separate image
-        print('A ================================================')
+        if self.req_data['script_args'][5] == False:  # grid only?
+            return
         x_label = SCRIPT_XY_PLOT_AXIS_OPTION[self.req_data['script_args'][0]]
         y_label = SCRIPT_XY_PLOT_AXIS_OPTION[self.req_data['script_args'][2]]
         parent_layer_group = LayerResult("X/Y plot: " + x_label + " / " + y_label, None, [])
         for x in re.split('\s*,\s*', self.req_data['script_args'][1]):
-            print('B ================================================')
             x_layer_group = LayerResult(x_label + ': ' + str(x), None, [])
             parent_layer_group.children.append(x_layer_group)
             for y in re.split('\s*,\s*', self.req_data['script_args'][3]):
-                print('C ================================================')
                 x_layer_group.children.append(LayerResult(str(x) + ' / ' + str(y), all_imgs.pop(0), None))
         self.layers = [parent_layer_group]
 
@@ -300,18 +300,18 @@ def decode_png(encoded_png):
 
 
 def open_images(images):
-    if images:
-        for encoded_img in images:
-            tmp_png_path = decode_png(encoded_img)
-            img = pdb.file_png_load(tmp_png_path, tmp_png_path)
-            pdb.gimp_display_new(img)
-            os.remove(tmp_png_path)
+    if not images:
+        return
+    for encoded_img in images:
+        tmp_png_path = decode_png(encoded_img)
+        img = pdb.file_png_load(tmp_png_path, tmp_png_path)
+        pdb.gimp_display_new(img)
+        os.remove(tmp_png_path)
 
 
 def create_layers(target_img, layers, x, y):
-
-    print('len layers:')
-    print(len(layers))
+    if not layers:
+        return
 
     def _create_nested_layers(parent_layer, layers):
         for layer in layers:
