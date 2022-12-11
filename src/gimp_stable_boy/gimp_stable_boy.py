@@ -141,13 +141,8 @@ class StableDiffusionCommand(Thread):
 class Txt2ImgCommand(StableDiffusionCommand):
     uri = 'sdapi/v1/txt2img'
 
-    def _make_request_data(self, **kwargs):
-        req_data = StableDiffusionCommand._make_request_data(self, **kwargs)
-        req_data['steps'] = 1
-        return req_data
 
-
-class Txt2ImgScriptCommand(StableDiffusionCommand):
+class Txt2ImgScriptXyPlotCommand(StableDiffusionCommand):
     uri = 'sdapi/v1/txt2img/script'
 
     def _make_request_data(self, **kwargs):
@@ -155,20 +150,15 @@ class Txt2ImgScriptCommand(StableDiffusionCommand):
         for prefs_key in prefs_keys:
             kwargs[prefs_key] = shelf['SB_TXT2IMG_' + prefs_key]
         req_data = StableDiffusionCommand._make_request_data(self, **kwargs)
-        req_data['steps'] = 1
         req_data['script_name'] = 'X/Y plot'
         req_data['script_args'] = [
             kwargs['x_type'], kwargs['x_values'], kwargs['y_type'], kwargs['y_values'], kwargs['draw_legend'],
             not kwargs['grid_only'], kwargs['no_fixed_seeds']
         ]
-        # print(req_data)
         return req_data
 
     def _process_http_response(self, resp):
-        r = json.loads(resp.read())
-        # with open('xy_resp.json', 'w') as resp_file:
-        #     resp_file.write(json.dumps(r))
-        all_imgs = r['images']
+        all_imgs = json.loads(resp.read())['images']
         self.images = [all_imgs.pop(0)]  # grid is always a separate image
         if self.req_data['script_args'][5] == False:  # grid only?
             return
@@ -184,14 +174,6 @@ class Txt2ImgScriptCommand(StableDiffusionCommand):
 
     def _estimate_timeout(self, req_data):
         return 300
-
-    def run(self):
-        self.status = 'RUNNING'
-        print('X ================================================')
-        with open('xy_resp.json') as resp_file:
-            self._process_http_response(resp_file)
-        print('Y ================================================')
-        self.status = 'DONE'
 
 
 class Img2ImgCommand(StableDiffusionCommand):
@@ -315,16 +297,6 @@ def create_layers(target_img, layers, x, y):
 
     def _create_nested_layers(parent_layer, layers):
         for layer in layers:
-            # print('=' * 40)
-            # print('layer.name: ' + layer.name)
-            # if layer.img:
-            #     print('has layer.img')
-            # else:
-            #     print('no layer.img')
-            # if layer.children:
-            #     print('len(layer.children):' + str(len(layer.children)))
-            # else:
-            #     print('no children')
             if layer.children:
                 gimp_layer_group = pdb.gimp_layer_group_new(target_img)
                 gimp_layer_group.name = layer.name
@@ -357,7 +329,7 @@ def run(cmd):
     else:
         cmd.url = shelf['SB_PREFERENCES_api_base_url'] + ('/' if not shelf['SB_PREFERENCES_api_base_url'].endswith('/')
                                                           else '') + cmd.uri
-        # try:
+    try:
         gimp.progress_init('Processing ...')
         request_start_time = time()
         cmd.start()
@@ -378,11 +350,10 @@ def run(cmd):
             cmd.img.undo_group_end()
         elif cmd.status == 'ERROR':
             raise Exception(cmd.error_msg)
-
-    # except Exception as e:
-    #     print(e)
-    #     dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
-    #     dialog.run()
+    except Exception as e:
+        print(e)
+        dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
+        dialog.run()
 
 
 def save_prefs(group, **kwargs):
@@ -419,9 +390,7 @@ def run_upscale(*args, **kwargs):
 
 def run_txt2img_script_xy_plot(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['SCRIPT_TXT2IMG_XY_PLOT']), args)))
-    kwargs['script_name'] = 'X/Y plot'
-    print(kwargs)
-    run(Txt2ImgScriptCommand(**kwargs))
+    run(Txt2ImgScriptXyPlotCommand(**kwargs))
 
 
 if __name__ == '__main__':
