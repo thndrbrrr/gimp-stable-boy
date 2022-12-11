@@ -92,6 +92,7 @@ Stable Boy does not have an option to choose the model. You'll have to do that i
 
 ✅ ~~Inpainting on large images: Stable Boy determines the region to send to Stable Diffusion based on where you painted the mask~~
 
+- [ ] WIP: scripts (X/Y plot etc.)
 - [ ] Outpainting
 - [ ] Better GUI
 - [ ] Keep metadata (seed, sampler settings and such)
