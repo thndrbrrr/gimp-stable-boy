@@ -67,7 +67,7 @@ GIMP_PARAMS = {
         (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
         (gimpfu.PF_STRING, 'negative_prompt', 'Negative prompt', ''),
         (gimpfu.PF_STRING, 'seed', 'Seed', '-1'),
-        (gimpfu.PF_SLIDER, 'steps', 'Steps', 25, (10, 150, 25)),
+        (gimpfu.PF_SLIDER, 'steps', 'Steps', 25, (1, 150, 25)),
         (gimpfu.PF_OPTION, 'sampler_index', 'Sampler', 0, SAMPLERS),
         (gimpfu.PF_BOOL, 'restore_faces', 'Restore faces', False),
         (gimpfu.PF_SLIDER, 'cfg_scale', 'CFG', 7.5, (0, 20, 0.5)),
@@ -93,6 +93,14 @@ GIMP_PARAMS = {
         (gimpfu.PF_BOOL, 'no_fixed_seeds', 'No fixed seeds', False),
         (gimpfu.PF_BOOL, 'grid_only', 'Grid only', True),
     ], 'SCRIPT_IMG2IMG_XY_PLOT': [
+        (gimpfu.PF_OPTION, 'x_type', 'X', 0, SCRIPT_XY_PLOT_AXIS_OPTIONS),
+        (gimpfu.PF_STRING, 'x_values', 'X values', ''),
+        (gimpfu.PF_OPTION, 'y_type', 'Y', 0, SCRIPT_XY_PLOT_AXIS_OPTIONS),
+        (gimpfu.PF_STRING, 'y_values', 'Y values', ''),
+        (gimpfu.PF_BOOL, 'draw_legend', 'Draw legend', True),
+        (gimpfu.PF_BOOL, 'no_fixed_seeds', 'No fixed seeds', False),
+        (gimpfu.PF_BOOL, 'grid_only', 'Grid only', True),
+    ], 'SCRIPT_INPAINTING_XY_PLOT': [
         (gimpfu.PF_OPTION, 'x_type', 'X', 0, SCRIPT_XY_PLOT_AXIS_OPTIONS),
         (gimpfu.PF_STRING, 'x_values', 'X values', ''),
         (gimpfu.PF_OPTION, 'y_type', 'Y', 0, SCRIPT_XY_PLOT_AXIS_OPTIONS),

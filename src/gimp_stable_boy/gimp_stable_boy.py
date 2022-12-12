@@ -280,6 +280,29 @@ class InpaintingCommand(Img2ImgCommand):
         return encoded_mask
 
 
+class InpaintingScriptXyPlotCommand(Img2ImgScriptXyPlotCommand, InpaintingCommand):
+
+    def _make_request_data(self, **kwargs):
+        prefs_keys = [param[1] for param in GIMP_PARAMS['INPAINTING'] if param[1] not in ['image', 'drawable']]
+        for prefs_key in prefs_keys:
+            kwargs[prefs_key] = shelf['SB_INPAINTING_' + prefs_key]
+        req_data = StableDiffusionCommand._make_request_data(self, **kwargs)
+        req_data['denoising_strength'] = float(kwargs['denoising_strength']) / 100
+        req_data['init_images'] = [self._encode_img()]
+        req_data['inpainting_mask_invert'] = 1
+        req_data['inpainting_fill'] = kwargs['inpainting_fill']
+        req_data['mask_blur'] = kwargs['mask_blur']
+        req_data['inpaint_full_res'] = kwargs['inpaint_full_res']
+        req_data['inpaint_full_res_padding'] = kwargs['inpaint_full_res_padding']
+        req_data['mask'] = self.encode_mask()
+        req_data['script_name'] = 'X/Y plot'
+        req_data['script_args'] = [
+            kwargs['x_type'], kwargs['x_values'], kwargs['y_type'], kwargs['y_values'], kwargs['draw_legend'],
+            not kwargs['grid_only'], kwargs['no_fixed_seeds']
+        ]
+        return req_data
+
+
 class ExtrasCommand(StableDiffusionCommand):
     uri = 'sdapi/v1/extra-single-image'
 
@@ -418,7 +441,16 @@ def run_img2img_script_xy_plot(*args, **kwargs):
 
 def run_inpainting(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['INPAINTING']), args)))
+    save_prefs('INPAINTING', **kwargs)
     run(InpaintingCommand(**kwargs))
+
+
+def run_inpainting_script_xy_plot(*args, **kwargs):
+    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['SCRIPT_INPAINTING_XY_PLOT']), args)))
+    k = 'autofit_inpainting'
+    kwargs[k] = shelf['SB_INPAINTING_' + k] if shelf['SB_INPAINTING_' + k] else True
+    print(kwargs.keys())
+    run(InpaintingScriptXyPlotCommand(**kwargs))
 
 
 def run_upscale(*args, **kwargs):
@@ -451,6 +483,10 @@ if __name__ == '__main__':
                         "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann",
                         "Torben Giesselmann", "2022", "<Image>/Stable Boy/Scripts/Image to Image/XY plot", "*",
                         GIMP_PARAMS['SCRIPT_IMG2IMG_XY_PLOT'], [], run_img2img_script_xy_plot)
+        gimpfu.register("stable-boy-inpainting-script", "Stable Boy " + __version__ + " - Inpainting X/Y plot",
+                        "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann",
+                        "Torben Giesselmann", "2022", "<Image>/Stable Boy/Scripts/Inpainting/XY plot", "*",
+                        GIMP_PARAMS['SCRIPT_INPAINTING_XY_PLOT'], [], run_inpainting_script_xy_plot)
 
     ssl._create_default_https_context = ssl._create_unverified_context
     gimpfu.main()
