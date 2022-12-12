@@ -37,14 +37,17 @@ from gimpshelf import shelf
 # Fix relative imports in Windows
 path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, path)
-from gimp_params import GIMP_PARAMS, IMAGE_TARGETS as IMG_TARGET, SAMPLERS, UPSCALERS, SCRIPT_XY_PLOT_AXIS_OPTIONS as SCRIPT_XY_PLOT_AXIS_OPTION
+from gimp_params import GIMP_PARAMS, DEFAULT_API_URL, SAMPLERS, UPSCALERS
+from gimp_params import IMAGE_TARGETS as IMG_TARGET, SCRIPT_XY_PLOT_AXIS_OPTIONS as SCRIPT_XY_PLOT_AXIS_OPTION
 
 
-__version__ = '0.3.3'
+__version__ = '0.3.4'
 
+LOG_REQUESTS = True
 TIMEOUT_REQUESTS = False
 TIMEOUT_FACTOR = 1
 MASK_LAYER_NAME = 'Inpainting Mask'
+ENABLE_SCRIPTS = True
 
 LayerResult = namedtuple('LayerResult', 'name img children')
 
@@ -70,27 +73,34 @@ class StableDiffusionCommand(Thread):
     def run(self):
         self.status = 'RUNNING'
         try:
+            if LOG_REQUESTS:
+                with open('req_' + str(int(time())) + '.json', 'w') as req_file:
+                    req_file.write(json.dumps(self.req_data))
             sd_request = Request(url=self.url,
                                  headers={'Content-Type': 'application/json'},
                                  data=json.dumps(self.req_data))
             # print(self.req_data)
             self.sd_resp = urlopen(sd_request,
                                    timeout=(self.timeout if self.timeout else socket._GLOBAL_DEFAULT_TIMEOUT))
-            self._process_http_response(self.sd_resp)
+            self.response = json.loads(self.sd_resp.read())
+            if LOG_REQUESTS:
+                with open('resp_' + str(int(time())) + '.json', 'w') as resp_file:
+                    resp_file.write(json.dumps(self.response))
+            self._process_response(self.response)
             self.status = 'DONE'
         except Exception as e:
             self.status = 'ERROR'
             self.error_msg = str(e)
             print(e)
 
-    def _process_http_response(self, resp):
+    def _process_response(self, resp):
 
         def _mk_short_hash(img):
             return hashlib.sha1(img.encode("UTF-8")).hexdigest()[:7]
 
-        all_imgs = json.loads(resp.read())['images']
+        all_imgs = resp['images']
         if self.img_target == 'Layers':
-            self.layers = [LayerResult(None, _mk_short_hash(img), img, None) for img in all_imgs]
+            self.layers = [LayerResult(_mk_short_hash(img), img, None) for img in all_imgs]
         elif self.img_target == 'Images':
             self.images = all_imgs
 
@@ -157,8 +167,8 @@ class Txt2ImgScriptXyPlotCommand(StableDiffusionCommand):
         ]
         return req_data
 
-    def _process_http_response(self, resp):
-        all_imgs = json.loads(resp.read())['images']
+    def _process_response(self, resp):
+        all_imgs = resp['images']
         self.images = [all_imgs.pop(0)]  # grid is always a separate image
         if self.req_data['script_args'][5] == False:  # grid only?
             return
@@ -183,6 +193,24 @@ class Img2ImgCommand(StableDiffusionCommand):
         req_data = StableDiffusionCommand._make_request_data(self, **kwargs)
         req_data['denoising_strength'] = float(kwargs['denoising_strength']) / 100
         req_data['init_images'] = [self._encode_img()]
+        return req_data
+
+
+class Img2ImgScriptXyPlotCommand(Txt2ImgScriptXyPlotCommand):
+    uri = 'sdapi/v1/img2img/script'
+
+    def _make_request_data(self, **kwargs):
+        prefs_keys = [param[1] for param in GIMP_PARAMS['IMG2IMG'] if param[1] not in ['image', 'drawable']]
+        for prefs_key in prefs_keys:
+            kwargs[prefs_key] = shelf['SB_IMG2IMG_' + prefs_key]
+        req_data = StableDiffusionCommand._make_request_data(self, **kwargs)
+        req_data['denoising_strength'] = float(kwargs['denoising_strength']) / 100
+        req_data['init_images'] = [self._encode_img()]
+        req_data['script_name'] = 'X/Y plot'
+        req_data['script_args'] = [
+            kwargs['x_type'], kwargs['x_values'], kwargs['y_type'], kwargs['y_values'], kwargs['draw_legend'],
+            not kwargs['grid_only'], kwargs['no_fixed_seeds']
+        ]
         return req_data
 
 
@@ -267,8 +295,8 @@ class ExtrasCommand(StableDiffusionCommand):
     def _estimate_timeout(self, req_data):
         return (60 if float(req_data['extras_upscaler_2_visibility']) > 0 else 30) * TIMEOUT_FACTOR
 
-    def _process_http_response(self, resp):
-        self.images = [json.loads(resp.read())['image']]
+    def _process_response(self, resp):
+        self.images = [resp['image']]
 
 
 ########################################################################################################################
@@ -312,48 +340,45 @@ def create_layers(target_img, layers, x, y):
                 pdb.gimp_image_delete(png_img)
                 os.remove(tmp_png_path)
 
-    if layers:
-        _create_nested_layers(None, layers)
-        mask_layer = pdb.gimp_image_get_layer_by_name(target_img, MASK_LAYER_NAME)
-        if mask_layer:
-            pdb.gimp_image_raise_item_to_top(target_img, mask_layer)
-            pdb.gimp_item_set_visible(mask_layer, False)
+    _create_nested_layers(None, layers)
+    mask_layer = pdb.gimp_image_get_layer_by_name(target_img, MASK_LAYER_NAME)
+    if mask_layer:
+        pdb.gimp_image_raise_item_to_top(target_img, mask_layer)
+        pdb.gimp_item_set_visible(mask_layer, False)
 
 
 def run(cmd):
-    if not shelf.has_key('SB_PREFERENCES_api_base_url'):
-        dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-                                   "Please set API URL in Stable Boy's preferences.")
-        dialog.run()
-        return
-    else:
-        cmd.url = shelf['SB_PREFERENCES_api_base_url'] + ('/' if not shelf['SB_PREFERENCES_api_base_url'].endswith('/')
-                                                          else '') + cmd.uri
-    try:
-        gimp.progress_init('Processing ...')
-        request_start_time = time()
-        cmd.start()
-        while cmd.status == 'RUNNING':
-            sleep(1)
-            time_spent = time() - request_start_time
-            if TIMEOUT_REQUESTS:
-                gimp.progress_update(time_spent / float(cmd.timeout))
-                if time_spent > cmd.timeout and TIMEOUT_REQUESTS:
-                    raise Exception('Timed out waiting for response')
-        gimp.progress_update(100)
-        print(cmd.status)
-        if cmd.status == 'DONE':
-            cmd.join()
-            cmd.img.undo_group_start()
-            create_layers(cmd.img, cmd.layers, cmd.x, cmd.y)
-            open_images(cmd.images)
-            cmd.img.undo_group_end()
-        elif cmd.status == 'ERROR':
-            raise Exception(cmd.error_msg)
-    except Exception as e:
-        print(e)
-        dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
-        dialog.run()
+    api_base_url = shelf['SB_PREFERENCES_api_base_url'] if shelf.has_key(
+        'SB_PREFERENCES_api_base_url') else DEFAULT_API_URL
+    cmd.url = api_base_url + ('/' if not api_base_url.endswith('/') else '') + cmd.uri
+
+    # try:
+    gimp.progress_init('Processing ...')
+    request_start_time = time()
+    cmd.start()
+    while cmd.status == 'RUNNING':
+        sleep(1)
+        time_spent = time() - request_start_time
+        if TIMEOUT_REQUESTS:
+            gimp.progress_update(time_spent / float(cmd.timeout))
+            if time_spent > cmd.timeout and TIMEOUT_REQUESTS:
+                raise Exception('Timed out waiting for response')
+    gimp.progress_update(100)
+    print(cmd.status)
+    if cmd.status == 'DONE':
+        cmd.join()
+        cmd.img.undo_group_start()
+        create_layers(cmd.img, cmd.layers, cmd.x, cmd.y)
+        open_images(cmd.images)
+        cmd.img.undo_group_end()
+    # elif cmd.status == 'ERROR':
+    #     raise Exception(cmd.error_msg)
+
+
+# except Exception as e:
+#     print(e)
+#     dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
+#     dialog.run()
 
 
 def save_prefs(group, **kwargs):
@@ -372,10 +397,23 @@ def run_txt2img(*args, **kwargs):
     run(Txt2ImgCommand(**kwargs))
 
 
+def run_txt2img_script_xy_plot(*args, **kwargs):
+    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['SCRIPT_TXT2IMG_XY_PLOT']), args)))
+    print(kwargs.keys())
+    run(Txt2ImgScriptXyPlotCommand(**kwargs))
+
+
 def run_img2img(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['IMG2IMG']), args)))
+    print(kwargs.keys())
     save_prefs('IMG2IMG', **kwargs)
     run(Img2ImgCommand(**kwargs))
+
+
+def run_img2img_script_xy_plot(*args, **kwargs):
+    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['SCRIPT_IMG2IMG_XY_PLOT']), args)))
+    print(kwargs.keys())
+    run(Img2ImgScriptXyPlotCommand(**kwargs))
 
 
 def run_inpainting(*args, **kwargs):
@@ -386,11 +424,6 @@ def run_inpainting(*args, **kwargs):
 def run_upscale(*args, **kwargs):
     kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['UPSCALE']), args)))
     run(ExtrasCommand(**kwargs))
-
-
-def run_txt2img_script_xy_plot(*args, **kwargs):
-    kwargs.update(dict(zip((param[1] for param in GIMP_PARAMS['SCRIPT_TXT2IMG_XY_PLOT']), args)))
-    run(Txt2ImgScriptXyPlotCommand(**kwargs))
 
 
 if __name__ == '__main__':
@@ -409,10 +442,15 @@ if __name__ == '__main__':
     gimpfu.register("stable-boy-upscale", "Stable Boy " + __version__ + " - Upscale",
                     "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
                     "2022", "<Image>/Stable Boy/Upscale", "*", GIMP_PARAMS['UPSCALE'], [], run_upscale)
-    gimpfu.register("stable-boy-txt2img-script", "Stable Boy " + __version__ + " - Text to Image Script",
-                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
-                    "2022", "<Image>/Stable Boy/Scripts/Text to Image/XY plot", "*",
-                    GIMP_PARAMS['SCRIPT_TXT2IMG_XY_PLOT'], [], run_txt2img_script_xy_plot)
+    if ENABLE_SCRIPTS:
+        gimpfu.register("stable-boy-txt2img-script", "Stable Boy " + __version__ + " - Text to Image X/Y plot",
+                        "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann",
+                        "Torben Giesselmann", "2022", "<Image>/Stable Boy/Scripts/Text to Image/XY plot", "*",
+                        GIMP_PARAMS['SCRIPT_TXT2IMG_XY_PLOT'], [], run_txt2img_script_xy_plot)
+        gimpfu.register("stable-boy-img2img-script", "Stable Boy " + __version__ + " - Image to Image X/Y plot",
+                        "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann",
+                        "Torben Giesselmann", "2022", "<Image>/Stable Boy/Scripts/Image to Image/XY plot", "*",
+                        GIMP_PARAMS['SCRIPT_IMG2IMG_XY_PLOT'], [], run_img2img_script_xy_plot)
 
     ssl._create_default_https_context = ssl._create_unverified_context
     gimpfu.main()
