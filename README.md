@@ -132,9 +132,9 @@ Distributed under the GNU General Public License v3.0. See file [`COPYING`](COPY
 <!-- CONTACT -->
 ## Contact
 
-Torben: tsgiesselmann@gmail.com
+Mail: torben@sdf.org
 
-Stable Boy: [https://github.com/tgiesselmann/gimp-stable-boy](https://github.com/tgiesselmann/gimp-stable-boy)
+Mastodon: [@torben@mastodon.sdf.org](https://mastodon.sdf.org/@torben)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
