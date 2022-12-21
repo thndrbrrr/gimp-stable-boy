@@ -50,21 +50,24 @@ class XyPlotCommand(StableDiffusionCommand):
                  'Inpainting': InpaintingCommand,}
 
     def __init__(self, **kwargs):
-        # TODO
-        # kwargs['autofit_inpainting'] = False
-        # self.autofit_inpainting = kwargs['autofit_inpainting']
         self.mode = sb.constants.MODES[kwargs['mode']]
-        StableDiffusionCommand.__init__(self, **kwargs)
-        self.uri = 'sdapi/v1/txt2img/script' if self.mode == 'Text to Image' else 'sdapi/v1/img2img/script'
-        self.url = urljoin(sb.gimp.pref_value(PREFS, 'api_base_url', sb.constants.DEFAULT_API_URL), self.uri)
-
-    def _make_request_data(self, **kwargs):
         # Update kwargs with values from mode's previously saved prefs
         _mode_meta = self.mode_cmds[self.mode].metadata
         prefs_keys = [param[1] for param in _mode_meta.params if param[1] not in ['image', 'drawable']]
         for prefs_key in prefs_keys:
-            kwargs[prefs_key] = shelf[_mode_meta.proc_name + '_' + prefs_key]
+            kwargs[prefs_key] = sb.gimp.pref_value(_mode_meta.proc_name, prefs_key)
+        self.autofit_inpainting = kwargs['autofit_inpainting'] if 'autofit_inpainting' in kwargs else False
+        StableDiffusionCommand.__init__(self, **kwargs)
+        self.uri = 'sdapi/v1/txt2img/script' if self.mode == 'Text to Image' else 'sdapi/v1/img2img/script'
+        self.url = urljoin(sb.gimp.pref_value(PREFS, 'api_base_url', sb.constants.DEFAULT_API_URL), self.uri)
 
+    def _determine_active_area(self):
+        if self.autofit_inpainting:
+            return sb.gimp.autofit_inpainting_area(self.img)
+        else:
+            return StableDiffusionCommand._determine_active_area(self)
+
+    def _make_request_data(self, **kwargs):
         req_data = StableDiffusionCommand._make_request_data(self, **kwargs)
         req_data['script_name'] = 'X/Y plot'
         req_data['script_args'] = [

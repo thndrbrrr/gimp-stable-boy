@@ -108,8 +108,7 @@ class StableDiffusionCommand(StableBoyCommand):
             self.images = all_imgs
 
     def _determine_active_area(self):
-        _, x, y, x2, y2 = pdb.gimp_selection_bounds(self.img)
-        return x, y, x2 - x, y2 - y
+        return sb.gimp.active_area(self.img)
 
     def _make_request_data(self, **kwargs):
         return {
