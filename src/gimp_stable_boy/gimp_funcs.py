@@ -33,6 +33,10 @@ def encode_img(img, x, y, width, height):
     # os.remove(tmp_init_img_path)
     return encoded_img
 
+def active_area(img):
+    _, x, y, x2, y2 = pdb.gimp_selection_bounds(img)
+    return x, y, x2 - x, y2 - y
+
 def autofit_inpainting_area(img):
     if not pdb.gimp_image_get_layer_by_name(img, constants.MASK_LAYER_NAME):
         raise Exception("Couldn't find layer named '" + constants.MASK_LAYER_NAME + "'")
