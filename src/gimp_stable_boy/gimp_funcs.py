@@ -29,8 +29,8 @@ def encode_img(img, x, y, width, height):
     img_flat_path = tempfile.mktemp(suffix='.png')
     pdb.file_png_save_defaults(img_flat, img_flat.layers[0], img_flat_path, img_flat_path)
     encoded_img = encode_png(img_flat_path)
-    print('init img: ' + img_flat_path)
-    # os.remove(tmp_init_img_path)
+    # print('init img: ' + img_flat_path)
+    os.remove(img_flat_path)
     return encoded_img
 
 def active_area(img):
@@ -74,8 +74,8 @@ def encode_mask(img, x, y, width, height):
     mask_img_path = tempfile.mktemp(suffix='.png')
     pdb.file_png_save_defaults(mask_img, mask_img.layers[0], mask_img_path, mask_img_path)
     encoded_mask = encode_png(mask_img_path)
-    print('mask img: ' + mask_img_path)
-    # os.remove(mask_img_path)
+    # print('mask img: ' + mask_img_path)
+    os.remove(mask_img_path)
     return encoded_mask
 
 def decode_png(encoded_png):

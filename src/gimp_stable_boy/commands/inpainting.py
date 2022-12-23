@@ -21,6 +21,7 @@ import gimp_stable_boy as sb
 from image_to_image import Img2ImgCommand
 from _command import StableBoyCommand, StableDiffusionCommand
 
+
 class InpaintingCommand(Img2ImgCommand):
     uri = 'sdapi/v1/img2img'
     metadata = StableBoyCommand.CommandMetadata("stable-boy-inpaint", "Stable Boy " + sb.__version__ + " - Inpainting",
