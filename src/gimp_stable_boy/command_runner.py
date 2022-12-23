@@ -43,7 +43,8 @@ def run_sd_command(cmd):
         if cmd.status == 'DONE':
             cmd.join()
             cmd.img.undo_group_start()
-            gimp_funcs.create_layers(cmd.img, cmd.layers, cmd.x, cmd.y)
+            apply_inpainting_mask = hasattr(cmd, 'apply_inpainting_mask') and cmd.apply_inpainting_mask
+            gimp_funcs.create_layers(cmd.img, cmd.layers, cmd.x, cmd.y, apply_inpainting_mask)
             gimp_funcs.open_images(cmd.images)
             cmd.img.undo_group_end()
         elif cmd.status == 'ERROR':

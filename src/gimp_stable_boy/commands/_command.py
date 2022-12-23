@@ -45,7 +45,6 @@ class StableBoyCommand(Thread):
         self.status = 'INITIALIZED'
 
 
-
 class StableDiffusionCommand(StableBoyCommand):
     uri = ''
 
@@ -57,8 +56,7 @@ class StableDiffusionCommand(StableBoyCommand):
         self.layers = None
         self.x, self.y, self.width, self.height = self._determine_active_area()
         print('x, y, w, h: ' + str(self.x) + ', ' + str(self.y) + ', ' + str(self.width) + ', ' + str(self.height))
-        if 'img_target' in kwargs:
-            self.img_target = sb.constants.IMAGE_TARGETS[kwargs['img_target']]
+        self.img_target = sb.constants.IMAGE_TARGETS[kwargs.get('img_target', 0)]  # layers are the default img_target
         self.req_data = self._make_request_data(**kwargs)
         if config.TIMEOUT_REQUESTS:
             self.timeout = self._estimate_timeout(self.req_data)
