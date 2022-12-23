@@ -42,10 +42,12 @@ class InpaintingCommand(Img2ImgCommand):
                         (gimpfu.PF_INT, 'inpaint_full_res_padding', 'Full res. inpainting padding', 0),
                         (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
                         (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, sb.constants.IMAGE_TARGETS),
+                        (gimpfu.PF_BOOL, 'apply_inpainting_mask', 'Apply inpainting mask', True),
                     ], [])
 
     def __init__(self, **kwargs):
         self.autofit_inpainting = kwargs['autofit_inpainting']
+        self.apply_inpainting_mask = kwargs['apply_inpainting_mask']
         Img2ImgCommand.__init__(self, **kwargs)
 
     def _make_request_data(self, **kwargs):

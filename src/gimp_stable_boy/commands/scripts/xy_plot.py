@@ -55,7 +55,9 @@ class XyPlotCommand(StableDiffusionCommand):
         prefs_keys = [param[1] for param in _mode_meta.params if param[1] not in ['image', 'drawable']]
         for prefs_key in prefs_keys:
             kwargs[prefs_key] = sb.gimp.pref_value(_mode_meta.proc_name, prefs_key)
-        self.autofit_inpainting = kwargs['autofit_inpainting'] if 'autofit_inpainting' in kwargs else False
+        
+        self.autofit_inpainting = kwargs.get('autofit_inpainting', False)
+        self.apply_inpainting_mask = kwargs.get('apply_inpainting_mask', False)
         StableDiffusionCommand.__init__(self, **kwargs)
         self.uri = 'sdapi/v1/txt2img/script' if self.mode == 'Text to Image' else 'sdapi/v1/img2img/script'
         self.url = urljoin(sb.gimp.pref_value(PREFS, 'api_base_url', sb.constants.DEFAULT_API_URL), self.uri)

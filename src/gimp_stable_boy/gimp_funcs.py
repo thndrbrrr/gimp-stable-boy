@@ -93,9 +93,10 @@ def open_images(images):
         pdb.gimp_display_new(img)
         os.remove(tmp_png_path)
 
-def create_layers(img, layers, x, y):
+def create_layers(img, layers, x, y, apply_inpainting_mask=False):
     if not layers:
         return
+    inp_mask_layer = pdb.gimp_image_get_layer_by_name(img, constants.MASK_LAYER_NAME)
 
     def _create_nested_layers(parent_layer, layers):
         for layer in layers:
@@ -111,11 +112,17 @@ def create_layers(img, layers, x, y):
                 gimp_layer.name = layer.name
                 pdb.gimp_layer_set_offsets(gimp_layer, x, y)
                 pdb.gimp_image_insert_layer(img, gimp_layer, parent_layer, 0)
+                pdb.gimp_layer_add_alpha(gimp_layer)
+                if inp_mask_layer and apply_inpainting_mask:
+                    pdb.gimp_image_set_active_layer(img, gimp_layer)
+                    pdb.gimp_image_select_item(img, 2, inp_mask_layer)
+                    pdb.gimp_selection_invert(img)
+                    pdb.gimp_edit_cut(gimp_layer)
                 pdb.gimp_image_delete(png_img)
                 os.remove(tmp_png_path)
 
-    _create_nested_layers(None, layers)
-    mask_layer = pdb.gimp_image_get_layer_by_name(img, constants.MASK_LAYER_NAME)
-    if mask_layer:
-        pdb.gimp_image_raise_item_to_top(img, mask_layer)
-        pdb.gimp_item_set_visible(mask_layer, False)
+    _create_nested_layers(parent_layer=None, layers=layers)
+    pdb.gimp_selection_none(img)
+    if inp_mask_layer:
+        pdb.gimp_image_raise_item_to_top(img, inp_mask_layer)
+        pdb.gimp_item_set_visible(inp_mask_layer, False)
