@@ -18,18 +18,14 @@ import json
 import socket
 import hashlib
 import tempfile
-import os
-from time import time, sleep
 from threading import Thread
 from urlparse import urljoin
-from urllib2 import Request, urlopen, URLError
-from httplib import HTTPException
+from urllib2 import Request, urlopen
 from collections import namedtuple
 from gimp_stable_boy.command_runner import config
 import gimp_stable_boy as sb
 from gimp_stable_boy.constants import PREFERENCES_SHELF_GROUP as PREFS
 from gimpfu import *
-from gimpshelf import shelf
 
 
 class StableBoyCommand(Thread):
@@ -95,6 +91,7 @@ class StableDiffusionCommand(StableBoyCommand):
             self.status = 'ERROR'
             self.error_msg = str(e)
             print(e)
+            raise e
 
     def _process_response(self, resp):
 

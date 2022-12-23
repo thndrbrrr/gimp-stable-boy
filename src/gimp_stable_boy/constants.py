@@ -1,4 +1,4 @@
-DEFAULT_API_URL = 'http://localhost:7861'
+DEFAULT_API_URL = 'http://localhost:7860'
 
 MASK_LAYER_NAME = 'Inpainting Mask'
 

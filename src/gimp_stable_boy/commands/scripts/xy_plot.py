@@ -18,7 +18,6 @@
 
 import re
 import gimpfu
-from gimpshelf import shelf
 from urlparse import urljoin
 import gimp_stable_boy as sb
 from gimp_stable_boy.constants import PREFERENCES_SHELF_GROUP as PREFS

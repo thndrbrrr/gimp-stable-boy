@@ -15,9 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from time import time, sleep
-# from urllib2 import Request, urlopen, URLError
-# from httplib import HTTPException
-# import gtk  # type: ignore
+import gtk  # type: ignore
 from gimpfu import *
 from .config import Config as config
 import gimp_funcs
@@ -29,29 +27,27 @@ def run_command(cmd):
     gimp.progress_update(100)
 
 def run_sd_command(cmd):
-    # assert cmd.width == 512
-    # try:
-    gimp.progress_init('Processing ...')
-    request_start_time = time()
-    cmd.start()
-    while cmd.status == 'RUNNING':
-        sleep(1)
-        time_spent = time() - request_start_time
-        if config.TIMEOUT_REQUESTS:
-            gimp.progress_update(time_spent / float(cmd.timeout))
-            if time_spent > cmd.timeout and config.TIMEOUT_REQUESTS:
-                raise Exception('Timed out waiting for response')
-    gimp.progress_update(100)
-    print(cmd.status)
-    if cmd.status == 'DONE':
-        cmd.join()
-        cmd.img.undo_group_start()
-        gimp_funcs.create_layers(cmd.img, cmd.layers, cmd.x, cmd.y)
-        gimp_funcs.open_images(cmd.images)
-        cmd.img.undo_group_end()
-    # elif cmd.status == 'ERROR':
-    #     raise Exception(cmd.error_msg)
-# except Exception as e:
-#     print(e)
-#     dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
-#     dialog.run()
+    try:
+        gimp.progress_init('Processing ...')
+        request_start_time = time()
+        cmd.start()
+        while cmd.status == 'RUNNING':
+            sleep(1)
+            time_spent = time() - request_start_time
+            if config.TIMEOUT_REQUESTS:
+                gimp.progress_update(time_spent / float(cmd.timeout))
+                if time_spent > cmd.timeout and config.TIMEOUT_REQUESTS:
+                    raise Exception('Timed out waiting for response')
+        gimp.progress_update(100)
+        print(cmd.status)
+        if cmd.status == 'DONE':
+            cmd.join()
+            cmd.img.undo_group_start()
+            gimp_funcs.create_layers(cmd.img, cmd.layers, cmd.x, cmd.y)
+            gimp_funcs.open_images(cmd.images)
+            cmd.img.undo_group_end()
+        elif cmd.status == 'ERROR':
+            raise Exception(cmd.error_msg)
+    except Exception as e:
+        error_dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
+        error_dialog.run()
