@@ -27,15 +27,15 @@ Here's a short demo video:
    ```sh
    git clone https://github.com/tgiesselmann/gimp-stable-boy.git
    ```
-1. Start GIMP, open Preferences and add the absolute path to _sub-folder_ (!) `src/gimp_stable_boy` to GIMP's plugin search path:
+1. Start GIMP, open Preferences and add the absolute path to _sub-folder_ (!) `src` to GIMP's plugin search path:
    ```
-   /home/...and-so-on.../gimp-stable-boy/src/gimp_stable_boy     # MacOS, Linux
-   C:/Users/...and-so-on.../gimp-stable-boy/src/gimp_stable_boy  # Windows
+   /home/...and-so-on.../gimp-stable-boy/src     # MacOS, Linux
+   C:/Users/...and-so-on.../gimp-stable-boy/src  # Windows
    ```
    ![GIMP Preferences](public/images/gimp-prefs-plugin-path.png)
 1. Restart GIMP.
 1. Start A1111 WebUI with argument `--api`. It doesn't matter whether it's running on your local machine or somewhere in the cloud.
-1. Copy-paste A1111 WebUI's URL (something like `https://abcdef123.gradio.com`) into the `API URL` field. (For the time being you'll have to do that once for every generation option.)
+1. Open Stable Boy's preferences (top menu > Stable Boy > Preferences) and copy-paste A1111 WebUI's URL (something like `https://abcdef123.gradio.com`) into the `API URL` field.
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -46,10 +46,13 @@ Here's a short demo video:
 ## Usage
 
 Stable Boy can be found in the `Stable Boy` top menu, with the following options:
+- Preferences
 - Text to Image
 - Image to Image
 - Inpainting
 - Upscale
+- Scripts
+  - X/Y plot
 
 ### Image size
 
@@ -71,11 +74,22 @@ When there is no selection, Stable Boy will process the full image. (Therefore i
 
 ### Inpainting
 
-Add a layer named `Inpainting Mask` to the image (see video) and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer. Stable Boy will automatically determine the area of the image to process.
+Add a layer named `Inpainting Mask` to the image (see video) and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer. Stable Boy will automatically determine the area of the image to process (multiples of 256 and at least 512x512).
 
 Stable Boy will insert any generated layers under the inpainting mask layer and hide the mask layer. The mask itself remains as is.
 
 > 👉 Select the mask layer and hit `DEL` to clear the mask.
+
+### Scripts: X/Y plot
+
+Choose mode, will use settings of last time mode was run
+
+grid always separate image
+
+optionally all results added as nested layer groups, labelled with options
+
+Disabled by default 
+A1111 with script API: url
 
 ### Model selection
 
