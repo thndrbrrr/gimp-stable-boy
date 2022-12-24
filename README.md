@@ -54,46 +54,55 @@ Stable Boy can be found in the `Stable Boy` top menu, with the following options
 - Scripts
   - X/Y plot
 
+### Model selection
+
+Stable Boy currently doesn't have an option to choose the model. You'll have to do that in WebUI. Loading an inpainting model is recommended.
+
 ### Image size
 
-The minimum resolution is 512x512.
+The minimum resolution is 512x512. Ideally choose dimensions that are multiples of 256.
 
 ### Generate images or layers
 
-Stable Boy can open the results coming from Stable Diffusion either as new images or as new layers in the current image. Using layers is very powerful, especially when inpainting large images.
+Stable Boy can open results coming from Stable Diffusion either as new images or add them as new layers to the current image. The `Results as` option dropdown lets you control this.
 
-### 🆕 Support for Rectangle Selection tool
+Using layers is very powerful, especially when inpainting large images. In the GIF below you can see how multiple variations of inpainting are added as layers, which can then be compared easily:
+
+GIF GIF GIF
+
+### Support for Rectangle Selection tool
 
 Use rectangular selections for selecting the region that Stable Diffusion will process. This makes it possible to work with images of arbitrary size. Note that **the selection's width and height need to be multiples of 8**. Think `512x512`, `512x768`, `1024x768`, that kinda thing.
 
 > 👉 Using GIMP's fixed-size rectangular selections makes this easy.
 
-When there is no selection, Stable Boy will process the full image. (Therefore image sizes should also be multiples of 8.)
+GIF GIF GIF
 
-> ❗️ Make sure your selected region is completely within the image.
+If there is neither a selection nor an inpainting mask (see below), Stable Boy will process the full image. (Therefore image sizes should also be multiples of 8.)
 
 ### Inpainting
 
-Add a layer named `Inpainting Mask` to the image (see video) and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer. Stable Boy will automatically determine the area of the image to process (multiples of 256 and at least 512x512).
+Add a layer named `Inpainting Mask` to the image and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer. Stable Boy will automatically determine the area of the image to process (multiples of 256 and at least 512x512). When results are added as layers, the inpainting mask is applied to those layers so that they really only contain the masked part.
 
-Stable Boy will insert any generated layers under the inpainting mask layer and hide the mask layer. The mask itself remains as is.
+GIF GIF GIF
+
+As can be seen in the GIF above, Stable Boy inserts any generated layers below the inpainting mask layer and then hides the mask layer. The mask itself remains as is.
 
 > 👉 Select the mask layer and hit `DEL` to clear the mask.
 
 ### Scripts: X/Y plot
 
-Choose mode, will use settings of last time mode was run
+X/Y plotting is an essential step in the generative art workflow: since changes in parameters are not immediate and multiple parameters often work in conjunction, the best way to go about it is to compare the results of different settings in an X/Y plot. When using Image to Image for example, an X/Y plot of multiple CFG scales (e.g. 5, 10, 14) and denoising strengths (0.35, 0.5, 0.75) makes it very easy to determine the right combination. X/Y plot can also be used to find the right seed (e.g. -1, -1, -1) and sampler combination (e.g. Euler a, DDIM).
 
-grid always separate image
+When running the X/Y plot script you'll have to choose a mode (Text to Image, Image to Image, or Inpainting). The script will then use that mode's settings from the last time that mode was run:
 
-optionally all results added as nested layer groups, labelled with options
+screenshot screenshot screenshot screenshot
 
-Disabled by default 
-A1111 with script API: url
+The result of X/Y plot is a grid as well as the individual images. Use the `Grid only` option to control whether the individual images should be included. Grids are always opened as separate images, whereas the individual images are added to the existing image as nested layer groups. Each layer is named after its X/Y parameter combination:
 
-### Model selection
+GIF GIF GIF
 
-Stable Boy does not have an option to choose the model. You'll have to do that in WebUI. Loading an inpainting model in A1111's WebUI is also recommended.
+**NOTE:** For now, script support is **disabled** by default since some changes to A1111's API are necessary. The branch with the required A1111 SD WebUI API changes can be found here: `https://github.com/tgiesselmann/stable-diffusion-webui/tree/script-api`. There is also a [pull request for these API changes](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5940) but it hasn't been merged yet. Once you are running A1111 with the required API changes you can enable X/Y plot by editing `src/gimp_stable_boy/config.py` and setting `Config.ENABLE_SCRIPTS` to `True`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -106,8 +115,9 @@ Stable Boy does not have an option to choose the model. You'll have to do that i
 
 ✅ ~~Inpainting on large images: Stable Boy determines the region to send to Stable Diffusion based on where you painted the mask~~
 
-- [ ] WIP: scripts (X/Y plot etc.)
-- [ ] Outpainting
+✅ ~~Script: X/Y plot~~
+
+- [ ] Script: outpainting
 - [ ] Better GUI
 - [ ] Keep metadata (seed, sampler settings and such)
 - [ ] Support for more options

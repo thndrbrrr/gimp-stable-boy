@@ -4,14 +4,14 @@
 
 ### New and improved
 
-- **Support for scripts** is here, starting with **X/Y plot**. Note that this is disabled by default as the [pull request for script API support](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5940) hasn't been merged yet. You can enable X/Y plot by editing `src/gimp_stable_boy/config.py` and setting `Config.ENABLE_SCRIPTS` to `True`. The branch with the required A1111 SD WebUI API changes can be found here: `https://github.com/tgiesselmann/stable-diffusion-webui/tree/script-api` (up-to-date with A1111's `master` branch as of 2022-12-23).
+- **Support for scripts** is here, starting with **X/Y plot**. Note that this is disabled by default (see readme).
 - Inpainting mask is now applied to new layers.
 - **Shared settings** between different commands via a preferences dialog. Currently only used for the API URL.
 - Major refactoring (moved to a command pattern), which makes it easier to add functionality in future. Commands (== GIMP plugins) are dynamically located in the source tree and registered.
 
 ### Bugs fixed
 
-- Autofitting the inpainting mask region didn't work properly if the mask layer wasn't active
+- Autofitting the inpainting mask region didn't work properly if the mask layer wasn't active.
 
 ## v0.3.3
 
