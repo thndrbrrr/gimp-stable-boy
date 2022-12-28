@@ -42,8 +42,13 @@ if __name__ == '__main__':
 
     registered_cmds = []
     for cmd_module_loc in cmd_module_locations:
-        cmd_module_names = ['.'.join(cmd_module_loc) + '.' + os.path.splitext(os.path.basename(c))[0]
-                            for c in glob(os.path.join(os.path.dirname(__file__), *(cmd_module_loc + ['*.py'])))]
+        cmd_module_names = [
+            '.'.join(cmd_module_loc)
+            + '.' + os.path.splitext(os.path.basename(c))[0]
+            for c in glob(
+                os.path.join(os.path.dirname(__file__),
+                             *(cmd_module_loc + ['*.py'])))
+        ]
         for cmd_module_name in cmd_module_names:
             for _, cmd_cls in (inspect.getmembers(import_module(cmd_module_name), is_cmd)):
                 if cmd_cls.__name__ not in registered_cmds:
