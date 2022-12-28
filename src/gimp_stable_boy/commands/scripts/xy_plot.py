@@ -20,8 +20,8 @@ import re
 import gimpfu
 from urlparse import urljoin
 import gimp_stable_boy as sb
-from gimp_stable_boy.constants import PREFERENCES_SHELF_GROUP as PREFS
-from .._command import StableBoyCommand, StableDiffusionCommand
+from gimp_stable_boy.config import PREFERENCES_SHELF_GROUP as PREFS
+from .._command import PluginCommand, StableDiffusionCommand
 from ..text_to_image import Txt2ImgCommand
 from ..image_to_image import Img2ImgCommand
 from ..inpainting import InpaintingCommand
@@ -30,37 +30,42 @@ from ..inpainting import InpaintingCommand
 class XyPlotCommand(StableDiffusionCommand):
     uri = ''
     metadata = StableDiffusionCommand.CommandMetadata(
-                    "stable-boy-xyplot", "Stable Boy " + sb.__version__ + " - X/Y plot",
-                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann",
-                    "Torben Giesselmann", "2022", "<Image>/Stable Boy/Scripts/XY plot", "*",
-                    [
-                        (gimpfu.PF_OPTION, 'mode', 'Mode', 0, sb.constants.MODES),
-                        (gimpfu.PF_OPTION, 'x_type', 'X', 0, sb.constants.SCRIPT_XY_PLOT_AXIS_OPTIONS),
-                        (gimpfu.PF_STRING, 'x_values', 'X values', ''),
-                        (gimpfu.PF_OPTION, 'y_type', 'Y', 0, sb.constants.SCRIPT_XY_PLOT_AXIS_OPTIONS),
-                        (gimpfu.PF_STRING, 'y_values', 'Y values', ''),
-                        (gimpfu.PF_BOOL, 'draw_legend', 'Draw legend', True),
-                        (gimpfu.PF_BOOL, 'no_fixed_seeds', 'No fixed seeds', False),
-                        (gimpfu.PF_BOOL, 'grid_only', 'Grid only', True),
-                    ],
-                    [],)
+        sb.__prefix__ + "-xyplot",
+        sb.__name__ + " " + sb.__version__ + " - X/Y plot",
+        sb.__description__,
+        sb.__author__,
+        sb.__author__ + " (c) " + sb.__year__,
+        sb.__year__,
+        sb.__menu__ + "/XY plot",
+        "*",
+        [
+            (gimpfu.PF_OPTION, 'mode', 'Mode', 0, sb.config.MODES),
+            (gimpfu.PF_OPTION, 'x_type', 'X', 0, sb.config.SCRIPT_XY_PLOT_AXIS_OPTIONS),
+            (gimpfu.PF_STRING, 'x_values', 'X values', ''),
+            (gimpfu.PF_OPTION, 'y_type', 'Y', 0, sb.config.SCRIPT_XY_PLOT_AXIS_OPTIONS),
+            (gimpfu.PF_STRING, 'y_values', 'Y values', ''),
+            (gimpfu.PF_BOOL, 'draw_legend', 'Draw legend', True),
+            (gimpfu.PF_BOOL, 'no_fixed_seeds', 'No fixed seeds', False),
+            (gimpfu.PF_BOOL, 'grid_only', 'Grid only', True),
+        ],
+        [],)
     mode_cmds = {'Text to Image': Txt2ImgCommand,
                  'Image to Image': Img2ImgCommand,
                  'Inpainting': InpaintingCommand,}
 
     def __init__(self, **kwargs):
-        self.mode = sb.constants.MODES[kwargs['mode']]
+        self.mode = sb.config.MODES[kwargs['mode']]
         # Update kwargs with values from mode's previously saved prefs
         _mode_meta = self.mode_cmds[self.mode].metadata
         prefs_keys = [param[1] for param in _mode_meta.params if param[1] not in ['image', 'drawable']]
         for prefs_key in prefs_keys:
             kwargs[prefs_key] = sb.gimp.pref_value(_mode_meta.proc_name, prefs_key)
-        
+
         self.autofit_inpainting = kwargs.get('autofit_inpainting', False)
         self.apply_inpainting_mask = kwargs.get('apply_inpainting_mask', False)
         StableDiffusionCommand.__init__(self, **kwargs)
         self.uri = 'sdapi/v1/txt2img/script' if self.mode == 'Text to Image' else 'sdapi/v1/img2img/script'
-        self.url = urljoin(sb.gimp.pref_value(PREFS, 'api_base_url', sb.constants.DEFAULT_API_URL), self.uri)
+        self.url = urljoin(sb.gimp.pref_value(PREFS, 'api_base_url', sb.config.DEFAULT_API_URL), self.uri)
 
     def _determine_active_area(self):
         if self.autofit_inpainting:
@@ -72,7 +77,9 @@ class XyPlotCommand(StableDiffusionCommand):
         req_data = StableDiffusionCommand._make_request_data(self, **kwargs)
         req_data['script_name'] = 'X/Y plot'
         req_data['script_args'] = [
-            kwargs['x_type'], kwargs['x_values'], kwargs['y_type'], kwargs['y_values'], kwargs['draw_legend'],
+            kwargs['x_type'], kwargs['x_values'],
+            kwargs['y_type'], kwargs['y_values'],
+            kwargs['draw_legend'],
             not kwargs['grid_only'], kwargs['no_fixed_seeds']
         ]
         if self.mode in ['Image to Image', 'Inpainting']:
@@ -90,18 +97,22 @@ class XyPlotCommand(StableDiffusionCommand):
     def _process_response(self, resp):
         all_imgs = resp['images']
         self.images = [all_imgs.pop(0)]  # grid is always a separate image
-        if self.req_data['script_args'][5] == False:  # grid only?
+        if self.req_data['script_args'][5] is False:  # grid only?
             return
         # Create layer structure with layer names based on X/Y values
-        x_label = sb.constants.SCRIPT_XY_PLOT_AXIS_OPTIONS[self.req_data['script_args'][0]]
-        y_label = sb.constants.SCRIPT_XY_PLOT_AXIS_OPTIONS[self.req_data['script_args'][2]]
-        LayerResult = StableBoyCommand.LayerResult
+        x_label = sb.config.SCRIPT_XY_PLOT_AXIS_OPTIONS[self.req_data['script_args'][0]]
+        y_label = sb.config.SCRIPT_XY_PLOT_AXIS_OPTIONS[self.req_data['script_args'][2]]
+        LayerResult = PluginCommand.LayerResult
         parent_layer_group = LayerResult("X/Y plot: " + x_label + " / " + y_label, None, [])
         for x in re.split(r'\s*,\s*', self.req_data['script_args'][1]):
             x_layer_group = LayerResult(x_label + ': ' + str(x), None, [])
             parent_layer_group.children.append(x_layer_group)
             for y in re.split(r'\s*,\s*', self.req_data['script_args'][3]):
-                x_layer_group.children.append(LayerResult(x_label + ': ' + str(x) + ' / ' + y_label + ': ' + str(y), all_imgs.pop(0), None))
+                x_layer_group.children.append(
+                    LayerResult(
+                        x_label
+                        + ': ' + str(x) + ' / ' + y_label + ': '
+                        + str(y), all_imgs.pop(0), None))
         self.layers = [parent_layer_group]
 
     def _estimate_timeout(self, req_data):

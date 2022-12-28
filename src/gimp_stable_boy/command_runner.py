@@ -16,9 +16,40 @@
 
 from time import time, sleep
 import gtk  # type: ignore
+from urlparse import urljoin
+from urllib2 import Request, urlopen
+from threading import Thread
+from collections import namedtuple
+
 from gimpfu import *
-from .config import Config as config
-import gimp_funcs
+from gimp_funcs import pref_value, create_layers, open_images, save_prefs, decode_png
+import config
+from config import PREFERENCES_SHELF_GROUP as PREFS, DEFAULT_API_URL
+import json
+
+
+class COMMANDSTATUS:
+    INITIALIZED = 0
+    RUNNING = 1
+    DONE = 2
+    ERROR  = 3
+
+
+class PluginCommand(Thread):
+    LayerResult = namedtuple('LayerResult', 'name img children')
+    CommandMetadata = namedtuple('CommandMetadata', 'proc_name, blurb, help, author, copyright, date, label, imagetypes, params, results')
+    metadata = None
+    command_runner = None
+
+    @classmethod
+    def run_command(cls, *args, **kwargs):
+        kwargs.update(dict(zip((param[1] for param in cls.metadata.params), args))) # type: ignore
+        save_prefs(cls.metadata.proc_name, **kwargs) # type: ignore
+        cls.command_runner(cls(**kwargs))  # type: ignore <== command_runner runs an instance of command class
+
+    def __init__(self, **kwargs):
+        Thread.__init__(self)
+        self.status = COMMANDSTATUS.INITIALIZED
 
 
 def run_command(cmd):
@@ -40,14 +71,14 @@ def run_sd_command(cmd):
                     raise Exception('Timed out waiting for response')
         gimp.progress_update(100)
         print(cmd.status)
-        if cmd.status == 'DONE':
+        if cmd.status == COMMANDSTATUS.DONE:
             cmd.join()
             cmd.img.undo_group_start()
             apply_inpainting_mask = hasattr(cmd, 'apply_inpainting_mask') and cmd.apply_inpainting_mask
-            gimp_funcs.create_layers(cmd.img, cmd.layers, cmd.x, cmd.y, apply_inpainting_mask)
-            gimp_funcs.open_images(cmd.images)
+            create_layers(cmd.img, cmd.layers, cmd.x, cmd.y, apply_inpainting_mask)
+            open_images(cmd.images)
             cmd.img.undo_group_end()
-        elif cmd.status == 'ERROR':
+        elif cmd.status == COMMANDSTATUS.ERROR:
             raise Exception(cmd.error_msg)
     except Exception as e:
         error_dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))

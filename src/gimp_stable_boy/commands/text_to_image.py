@@ -24,21 +24,23 @@ from _command import StableDiffusionCommand
 class Txt2ImgCommand(StableDiffusionCommand):
     uri = 'sdapi/v1/txt2img'
     metadata = StableDiffusionCommand.CommandMetadata(
-                    "stable-boy-txt2img",
-                    "Stable Boy " + sb.__version__ + " - Text to Image",
-                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API",
-                    "Torben Giesselmann",
-                    "Torben Giesselmann",
-                    "2022",
-                    "<Image>/Stable Boy/Text to Image", "*", [
-                        (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
-                        (gimpfu.PF_STRING, 'negative_prompt', 'Negative prompt', ''),
-                        (gimpfu.PF_STRING, 'seed', 'Seed', '-1'),
-                        (gimpfu.PF_SLIDER, 'steps', 'Steps', 25, (1, 150, 25)),
-                        (gimpfu.PF_OPTION, 'sampler_index', 'Sampler', 0, sb.constants.SAMPLERS),
-                        (gimpfu.PF_BOOL, 'restore_faces', 'Restore faces', False),
-                        (gimpfu.PF_SLIDER, 'cfg_scale', 'CFG', 7.5, (0, 20, 0.5)),
-                        (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
-                        (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, sb.constants.IMAGE_TARGETS),
-                    ],
-                    [],)
+        sb.__prefix__ + "-txt2img",
+        sb.__name__ + sb.__version__ + " - Text to Image",
+        sb.__description__,
+        sb.__author__,
+        sb.__author__,
+        sb.__year__,
+        sb.__menu__ + "/Text to Image",
+        "*",
+        [
+            (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
+            (gimpfu.PF_STRING, 'negative_prompt', 'Negative prompt', ''),
+            (gimpfu.PF_STRING, 'seed', 'Seed', '-1'),
+            (gimpfu.PF_SLIDER, 'steps', 'Steps', 25, (1, 150, 25)),
+            (gimpfu.PF_OPTION, 'sampler_index', 'Sampler', 0, sb.config.SAMPLERS),
+            (gimpfu.PF_BOOL,   'restore_faces', 'Restore faces', False),
+            (gimpfu.PF_SLIDER, 'cfg_scale', 'CFG', 7.5, (0, 20, 0.5)),
+            (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
+            (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, sb.config.IMAGE_TARGETS),
+        ],
+        [],)

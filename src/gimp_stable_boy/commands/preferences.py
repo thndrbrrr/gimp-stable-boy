@@ -18,25 +18,26 @@
 
 import gimpfu
 import gimp_stable_boy as sb
-from _command import StableBoyCommand
+from _command import PluginCommand
 
 
-class PreferencesCommand(StableBoyCommand):
-    metadata = StableBoyCommand.CommandMetadata(
-                    "stable-boy-prefs",
-                    "Stable Boy " + sb.__version__ + " - Preferences",
-                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API",
-                    "Torben Giesselmann",
-                    "Torben Giesselmann",
-                    "2022",
-                    "<Image>/Stable Boy/Preferences",
-                    "*",
-                    [(gimpfu.PF_STRING, 'api_base_url', 'API URL', sb.constants.DEFAULT_API_URL)],
-                    [],)
+class PreferencesCommand(PluginCommand):
+    metadata = PluginCommand.CommandMetadata(
+        sb.__prefix__ + "-prefs",
+        sb.__name__ + sb.__version__ + " - Preferences",
+        sb.__description__,
+        sb.__author__,
+        sb.__author__,
+        sb.__year__,
+        sb.__menu__ + "/Preferences",
+        "*",
+        [(gimpfu.PF_STRING, 'api_base_url',
+            'API URL', sb.config.DEFAULT_API_URL)],
+        [],)
 
     def __init__(self, **kwargs):
-        StableBoyCommand.__init__(self, **kwargs)
+        PluginCommand.__init__(self, **kwargs)
         self.prefs = kwargs
-    
+
     def run(self):
-        sb.gimp.save_prefs(sb.constants.PREFERENCES_SHELF_GROUP, **self.prefs)
+        sb.gimp.save_prefs(sb.config.PREFERENCES_SHELF_GROUP, **self.prefs)
