@@ -18,25 +18,33 @@
 
 import gimpfu
 import gimp_stable_boy as sb
-from _command import StableBoyCommand, StableDiffusionCommand
+from _command import PluginCommand, StableDiffusionCommand
 
 
 class UpscaleCommand(StableDiffusionCommand):
     uri = 'sdapi/v1/extra-single-image'
-    metadata = StableBoyCommand.CommandMetadata("stable-boy-upscale", "Stable Boy " + sb.__version__ + " - Upscale",
-                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
-                    "2022", "<Image>/Stable Boy/Upscale", "*", [
-                        (gimpfu.PF_SLIDER, 'upscaling_resize', 'Upscaling factor', 2, (1, 4, 1)),
-                        (gimpfu.PF_OPTION, 'upscaler_1', 'Upscaler 1', 0, sb.constants.UPSCALERS),
-                        (gimpfu.PF_OPTION, 'upscaler_2', 'Upscaler 2', 0, sb.constants.UPSCALERS),
-                        (gimpfu.PF_SLIDER, 'extras_upscaler_2_visibility', 'Upscaler 2 visibility', 0, (0, 1, 0.1))],
-                        [],)
+    metadata = PluginCommand.CommandMetadata(
+        sb.__prefix__ + "-upscale",
+        sb.__name__ + sb.__version__ + " - Upscale",
+        sb.__description__,
+        sb.__author__,
+        sb.__author__,
+        sb.__year__,
+        sb.__menu__ + "/Upscale",
+        "*",
+        [
+            (gimpfu.PF_SLIDER, 'upscaling_resize', 'Upscaling factor', 2, (1, 4, 1)),
+            (gimpfu.PF_OPTION, 'upscaler_1', 'Upscaler 1', 0, sb.config.UPSCALERS),
+            (gimpfu.PF_OPTION, 'upscaler_2', 'Upscaler 2', 0, sb.config.UPSCALERS),
+            (gimpfu.PF_SLIDER, 'extras_upscaler_2_visibility', 'Upscaler 2 visibility', 0, (0, 1, 0.1))
+        ],
+        [],)
 
     def _make_request_data(self, **kwargs):
         return {
             'upscaling_resize': int(kwargs['upscaling_resize']),
-            'upscaler_1': sb.constants.UPSCALERS[kwargs['upscaler_1']],
-            'upscaler_2': sb.constants.UPSCALERS[kwargs['upscaler_2']],
+            'upscaler_1': sb.config.UPSCALERS[kwargs['upscaler_1']],
+            'upscaler_2': sb.config.UPSCALERS[kwargs['upscaler_2']],
             'extras_upscaler_2_visibility': kwargs['extras_upscaler_2_visibility'],
             'image': sb.gimp.encode_img(self.img, self.x, self.y, self.width, self.height),
         }

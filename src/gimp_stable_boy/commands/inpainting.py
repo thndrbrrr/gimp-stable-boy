@@ -19,31 +19,39 @@
 import gimpfu
 import gimp_stable_boy as sb
 from image_to_image import Img2ImgCommand
-from _command import StableBoyCommand, StableDiffusionCommand
+from _command import PluginCommand, StableDiffusionCommand
 
 
 class InpaintingCommand(Img2ImgCommand):
     uri = 'sdapi/v1/img2img'
-    metadata = StableBoyCommand.CommandMetadata("stable-boy-inpaint", "Stable Boy " + sb.__version__ + " - Inpainting",
-                    "Stable Diffusion plugin for AUTOMATIC1111's WebUI API", "Torben Giesselmann", "Torben Giesselmann",
-                    "2022", "<Image>/Stable Boy/Inpainting", "*", [
-                        (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
-                        (gimpfu.PF_STRING, 'negative_prompt', 'Negative prompt', ''),
-                        (gimpfu.PF_STRING, 'seed', 'Seed', '-1'),
-                        (gimpfu.PF_SLIDER, 'steps', 'Steps', 25, (1, 150, 25)),
-                        (gimpfu.PF_OPTION, 'sampler_index', 'Sampler', 0, sb.constants.SAMPLERS),
-                        (gimpfu.PF_BOOL, 'restore_faces', 'Restore faces', False),
-                        (gimpfu.PF_SLIDER, 'cfg_scale', 'CFG', 7.5, (0, 20, 0.5)),
-                        (gimpfu.PF_SLIDER, 'denoising_strength', 'Denoising strength %', 50.0, (0, 100, 1)),
-                        (gimpfu.PF_BOOL, 'autofit_inpainting', 'Autofit inpainting region', True),
-                        (gimpfu.PF_SLIDER, 'mask_blur', 'Mask blur', 4, (0, 32, 1)),
-                        (gimpfu.PF_OPTION, 'inpainting_fill', 'Inpainting fill', 1, sb.constants.INPAINTING_FILL_MODE),
-                        (gimpfu.PF_BOOL, 'inpaint_full_res', 'Inpaint at full resolution', True),
-                        (gimpfu.PF_INT, 'inpaint_full_res_padding', 'Full res. inpainting padding', 0),
-                        (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
-                        (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, sb.constants.IMAGE_TARGETS),
-                        (gimpfu.PF_BOOL, 'apply_inpainting_mask', 'Apply inpainting mask', True),
-                    ], [])
+    metadata = PluginCommand.CommandMetadata(
+        sb.__prefix__ + "-inpainting",
+        sb.__name__ + sb.__version__ + " - Inpainting",
+        sb.__description__,
+        sb.__author__,
+        sb.__author__ + ' (c) ' + sb.__year__,
+        sb.__year__,
+        sb.__menu__ + "/Inpainting",
+        "*",
+        [
+            (gimpfu.PF_STRING, 'prompt', 'Prompt', ''),
+            (gimpfu.PF_STRING, 'negative_prompt', 'Negative prompt', ''),
+            (gimpfu.PF_STRING, 'seed', 'Seed', '-1'),
+            (gimpfu.PF_SLIDER, 'steps', 'Steps', 25, (1, 150, 25)),
+            (gimpfu.PF_OPTION, 'sampler_index', 'Sampler', 0, sb.config.SAMPLERS),
+            (gimpfu.PF_BOOL,   'restore_faces', 'Restore faces', False),
+            (gimpfu.PF_SLIDER, 'cfg_scale', 'CFG', 7.5, (0, 20, 0.5)),
+            (gimpfu.PF_SLIDER, 'denoising_strength', 'Denoising strength %', 50.0, (0, 100, 1)),
+            (gimpfu.PF_BOOL,   'autofit_inpainting', 'Autofit inpainting region', True),
+            (gimpfu.PF_SLIDER, 'mask_blur', 'Mask blur', 4, (0, 32, 1)),
+            (gimpfu.PF_OPTION, 'inpainting_fill', 'Inpainting fill', 1, sb.config.INPAINTING_FILL_MODE),
+            (gimpfu.PF_BOOL,   'inpaint_full_res', 'Inpaint at full resolution', True),
+            (gimpfu.PF_INT,    'inpaint_full_res_padding', 'Full res. inpainting padding', 0),
+            (gimpfu.PF_SLIDER, 'num_images', 'Number of images', 1, (1, 4, 1)),
+            (gimpfu.PF_OPTION, 'img_target', 'Results as', 0, sb.config.IMAGE_TARGETS),
+            (gimpfu.PF_BOOL,   'apply_inpainting_mask', 'Apply inpainting mask', True),
+        ],
+        [])
 
     def __init__(self, **kwargs):
         self.autofit_inpainting = kwargs['autofit_inpainting']
