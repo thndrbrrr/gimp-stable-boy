@@ -4,7 +4,7 @@ from gimpfu import *
 from gimpshelf import shelf
 import config
 import base64
-
+from math import ceil
 
 def save_prefs(group_name, **kwargs):
     for pref_key in (key for key in kwargs.keys() if key not in ['image', 'drawable']):
@@ -44,9 +44,9 @@ def autofit_inpainting_area(img):
     mask_layer = pdb.gimp_image_get_layer_by_name(img_cpy, config.MASK_LAYER_NAME)
     pdb.gimp_image_set_active_layer(img_cpy, mask_layer)  # need to make it the active layer ...
     pdb.plug_in_autocrop_layer(img_cpy, mask_layer)  # ... because this unintuitively crops the active layer (!)
-    target_width = math.ceil(float(mask_layer.width) / 256) * 256
+    target_width = ceil(float(mask_layer.width) / 256) * 256
     target_width = max(512, target_width)
-    target_height = math.ceil(float(mask_layer.height) / 256) * 256
+    target_height = ceil(float(mask_layer.height) / 256) * 256
     target_height = max(512, target_height)
     mask_center_x = mask_layer.offsets[0] + int(mask_layer.width / 2)
     mask_center_y = mask_layer.offsets[1] + int(mask_layer.height / 2)

@@ -58,17 +58,48 @@ def run_command(cmd):
     gimp.progress_update(100)
 
 def run_sd_command(cmd):
+    progress_uri = urljoin(
+        pref_value(PREFS, 'api_base_url', DEFAULT_API_URL),
+        "/sdapi/v1/progress")
+
+    last_img = None
     try:
         gimp.progress_init('Processing ...')
         request_start_time = time()
         cmd.start()
-        while cmd.status == 'RUNNING':
+        while cmd.status == COMMANDSTATUS.RUNNING:
             sleep(1)
+
             time_spent = time() - request_start_time
             if config.TIMEOUT_REQUESTS:
                 gimp.progress_update(time_spent / float(cmd.timeout))
                 if time_spent > cmd.timeout and config.TIMEOUT_REQUESTS:
                     raise Exception('Timed out waiting for response')
+            else:
+                sd_request = Request(url=progress_uri)
+                resp = urlopen(sd_request, timeout=9.0)
+                status = json.loads(resp.read())
+                state = status['state']
+                print state
+                print(float(state['sampling_step']/float(state['sampling_steps'])+1))
+                gimp.progress_update(float(state['sampling_step'])/float(state['sampling_steps']+1))
+
+            if True: # cmd.display_progress:
+                img = status['current_image']
+
+                i = 0
+                if img and img != last_img:
+                    i += 1
+                    #group = pdb.gimp_layer_group_new(img)
+                    #group.name = "my group"
+                    #cmd.img.add_layer(group, 0)
+                    # pdb.gimp_image_insert_layer(decode_png(img), cmd.layers, group, 0)
+                    open_images([img]) # but rather have them in a layer group (progress)
+                    # layers = PluginCommand.LayerResult("step"+str(i), None, []) ?
+                    # create_layers(img, [layers], cmd.x, cmd.y) ?
+                    # pdb.gimp_image_set_active_layer(cmd.img, cmd.img.layers[0])
+                    last_img = img
+
         gimp.progress_update(100)
         print(cmd.status)
         if cmd.status == COMMANDSTATUS.DONE:
