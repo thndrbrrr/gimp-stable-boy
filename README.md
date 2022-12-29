@@ -7,7 +7,6 @@
   </p>
 </div>
 
-<!-- ABOUT THE PROJECT -->
 ## About
 
 [AUTOMATIC1111's Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) is one of the most powerful tools in the generative AI space. Stable Boy puts that power into GIMP 2.10 by calling into A1111 WebUI's API.
@@ -15,8 +14,6 @@
 Here's a short demo video:
 
 [![A short demo](./public/images/demo-video-screenshot.png)](https://youtu.be/YMVog30OcTI)
-
-(Not shown: 🆕 Using rectangular selections to select the region that Stable Diffusion will process. See Usage below.)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -37,12 +34,9 @@ Here's a short demo video:
 1. Start A1111 WebUI with argument `--api`. It doesn't matter whether it's running on your local machine or somewhere in the cloud.
 1. Open Stable Boy's preferences (top menu > Stable Boy > Preferences) and copy-paste A1111 WebUI's URL (something like `https://abcdef123.gradio.com`) into the `API URL` field.
 
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-<!-- USAGE EXAMPLES -->
 ## Usage
 
 Stable Boy can be found in the `Stable Boy` top menu, with the following options:
@@ -64,11 +58,12 @@ The minimum resolution is 512x512. Ideally choose dimensions that are multiples 
 
 ### Generate images or layers
 
-Stable Boy can open results coming from Stable Diffusion either as new images or add them as new layers to the current image. The `Results as` option dropdown lets you control this.
+Stable Boy can open results coming from Stable Diffusion as new images, or they can be added as new layers to the current image. The `Results as` option dropdown lets you control this.
 
 Using layers is very powerful, especially when inpainting large images. In the GIF below you can see how multiple variations of inpainting are added as layers, which can then be compared easily:
 
-GIF GIF GIF
+<!-- ![Inpainting with layers](public/images/inpainting_with_layers.gif) -->
+![Inpainting with layers](public/images/inpainting_v5.gif)
 
 ### Support for Rectangle Selection tool
 
@@ -76,7 +71,7 @@ Use rectangular selections for selecting the region that Stable Diffusion will p
 
 > 👉 Using GIMP's fixed-size rectangular selections makes this easy.
 
-GIF GIF GIF
+🔴🔴🔴 GIF GIF GIF
 
 If there is neither a selection nor an inpainting mask (see below), Stable Boy will process the full image. (Therefore image sizes should also be multiples of 8.)
 
@@ -84,7 +79,7 @@ If there is neither a selection nor an inpainting mask (see below), Stable Boy w
 
 Add a layer named `Inpainting Mask` to the image and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer. Stable Boy will automatically determine the area of the image to process (multiples of 256 and at least 512x512). When results are added as layers, the inpainting mask is applied to those layers so that they really only contain the masked part.
 
-GIF GIF GIF
+🔴🔴🔴 GIF GIF GIF
 
 As can be seen in the GIF above, Stable Boy inserts any generated layers below the inpainting mask layer and then hides the mask layer. The mask itself remains as is.
 
@@ -96,19 +91,17 @@ X/Y plotting is an essential step in the generative art workflow: since changes 
 
 When running the X/Y plot script you'll have to choose a mode (Text to Image, Image to Image, or Inpainting). The script will then use that mode's settings from the last time that mode was run:
 
-screenshot screenshot screenshot screenshot
+![XY plot mode options](public/images/xy_plot_mode_selection.png)
 
 The result of X/Y plot is a grid as well as the individual images. Use the `Grid only` option to control whether the individual images should be included. Grids are always opened as separate images, whereas the individual images are added to the existing image as nested layer groups. Each layer is named after its X/Y parameter combination:
 
-GIF GIF GIF
+🔴🔴🔴 GIF GIF GIF
 
 **NOTE:** For now, script support is **disabled** by default since some changes to A1111's API are necessary. The branch with the required A1111 SD WebUI API changes can be found here: `https://github.com/tgiesselmann/stable-diffusion-webui/tree/script-api`. There is also a [pull request for these API changes](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5940) but it hasn't been merged yet. Once you are running A1111 with the required API changes you can enable X/Y plot by editing `src/gimp_stable_boy/config.py` and setting `Config.ENABLE_SCRIPTS` to `True`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-<!-- ROADMAP -->
 ## Roadmap
 
 ✅ ~~Rectangular selections as image sources for each mode~~
@@ -117,7 +110,7 @@ GIF GIF GIF
 
 ✅ ~~Script: X/Y plot~~
 
-- [ ] Script: outpainting
+- [ ] Outpainting
 - [ ] Better GUI
 - [ ] Keep metadata (seed, sampler settings and such)
 - [ ] Support for more options
@@ -128,8 +121,6 @@ See the [open issues](https://github.com/tgiesselmann/gimp-stable-boy/issues) fo
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-<!-- CONTRIBUTING -->
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**. If you have a suggestion that would make this better, please fork the repo and create a pull request. Thank you!
@@ -143,8 +134,6 @@ Contributions are what make the open source community such an amazing place to l
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-<!-- LICENSE -->
 ## License
 
 Distributed under the GNU General Public License v3.0. See file [`COPYING`](COPYING) for more information.
@@ -152,8 +141,6 @@ Distributed under the GNU General Public License v3.0. See file [`COPYING`](COPY
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-<!-- CONTACT -->
 ## Contact
 
 Torben: tsgiesselmann@gmail.com
@@ -163,8 +150,6 @@ Stable Boy: [https://github.com/tgiesselmann/gimp-stable-boy](https://github.com
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-<!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
 In the end, everyone stands on the shoulders of giants.
