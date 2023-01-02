@@ -97,11 +97,11 @@ class XyPlotCommand(StableDiffusionCommand):
         y_label = sb.constants.SCRIPT_XY_PLOT_AXIS_OPTIONS[self.req_data['script_args'][2]]
         LayerResult = StableBoyCommand.LayerResult
         parent_layer_group = LayerResult("X/Y plot: " + x_label + " / " + y_label, None, [])
-        for x in re.split(r'\s*,\s*', self.req_data['script_args'][1]):
-            x_layer_group = LayerResult(x_label + ': ' + str(x), None, [])
-            parent_layer_group.children.append(x_layer_group)
-            for y in re.split(r'\s*,\s*', self.req_data['script_args'][3]):
-                x_layer_group.children.append(LayerResult(x_label + ': ' + str(x) + ' / ' + y_label + ': ' + str(y), all_imgs.pop(0), None))
+        for y in re.split(r'\s*,\s*', self.req_data['script_args'][3]):
+            y_layer_group = LayerResult(y_label + ': ' + str(y), None, [])
+            for x in re.split(r'\s*,\s*', self.req_data['script_args'][1]):
+                y_layer_group.children.insert(0, LayerResult(x_label + ': ' + str(x) + ' / ' + y_label + ': ' + str(y), all_imgs.pop(0), None))
+            parent_layer_group.children.insert(0, y_layer_group)
         self.layers = [parent_layer_group]
 
     def _estimate_timeout(self, req_data):

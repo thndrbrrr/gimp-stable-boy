@@ -60,10 +60,34 @@ The minimum resolution is 512x512. Ideally choose dimensions that are multiples 
 
 Stable Boy can open results coming from Stable Diffusion as new images, or they can be added as new layers to the current image. The `Results as` option dropdown lets you control this.
 
-Using layers is very powerful, especially when inpainting large images. In the GIF below you can see how multiple variations of inpainting are added as layers, which can then be compared easily:
+Using layers is very powerful, especially when inpainting large images.
+
+### Inpainting
+
+Add a layer named `Inpainting Mask` to the image and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer. Stable Boy will automatically determine the area of the image to process (multiples of 256 and at least 512x512). When results are added as layers, the inpainting mask is applied to those layers so that they really only contain the masked part.
+
+In the GIF below you can see how multiple variations of inpainting are added as layers, which can then be compared easily:
 
 <!-- ![Inpainting with layers](public/images/inpainting_with_layers.gif) -->
 ![Inpainting with layers](public/images/inpainting_v5.gif)
+
+Stable Boy inserts any generated layers below the inpainting mask layer and then hides the mask layer. The mask itself remains as is.
+
+> 👉 Select the mask layer and hit `DEL` to clear the mask.
+
+### X/Y plotting
+
+X/Y plotting is an essential step in generative art workflows: since changes in parameters are not immediate and multiple parameters often work in conjunction, the best way to go about it is to compare the results of different settings in an X/Y plot. When using Image to Image for example, an X/Y plot of multiple CFG scales (e.g. 5, 10, 14) and denoising strengths (0.35, 0.5, 0.75) makes it very easy to determine the right combination:
+
+![img2img XY plot CFG/denoising](public/images/img2imgxy.gif)
+
+The result of X/Y plot is a grid as well as the individual images. Use the `Grid only` option to control whether the individual images should be included. As can be seen in the GIF image above, grids are always opened as separate images, whereas individual result images are added to the existing image as nested layer groups. Each layer is named after its X/Y parameter combination.
+
+When running the X/Y plot script you'll have to choose a mode (Text to Image, Image to Image, or Inpainting). The script will then use that mode's settings from the last time that mode was run:
+
+![XY plot mode options](public/images/xy_plot_mode_selection.png)
+
+**NOTE:** For now, script support is **disabled** by default since some changes to A1111's API are necessary. The branch with the required A1111 SD WebUI API changes can be found here: `https://github.com/tgiesselmann/stable-diffusion-webui/tree/script-api`. There is also a [pull request for these API changes](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5940) but it hasn't been merged yet. Once you are running A1111 with the required API changes you can enable X/Y plot by editing `src/gimp_stable_boy/config.py` and setting `Config.ENABLE_SCRIPTS` to `True`.
 
 ### Support for Rectangle Selection tool
 
@@ -71,33 +95,9 @@ Use rectangular selections for selecting the region that Stable Diffusion will p
 
 > 👉 Using GIMP's fixed-size rectangular selections makes this easy.
 
-🔴🔴🔴 GIF GIF GIF
+<!-- 🔴🔴🔴 GIF GIF GIF -->
 
 If there is neither a selection nor an inpainting mask (see below), Stable Boy will process the full image. (Therefore image sizes should also be multiples of 8.)
-
-### Inpainting
-
-Add a layer named `Inpainting Mask` to the image and make it the top layer. Use a paintbrush and paint the region you want to inpaint with black on that mask layer. Stable Boy will automatically determine the area of the image to process (multiples of 256 and at least 512x512). When results are added as layers, the inpainting mask is applied to those layers so that they really only contain the masked part.
-
-🔴🔴🔴 GIF GIF GIF
-
-As can be seen in the GIF above, Stable Boy inserts any generated layers below the inpainting mask layer and then hides the mask layer. The mask itself remains as is.
-
-> 👉 Select the mask layer and hit `DEL` to clear the mask.
-
-### Scripts: X/Y plot
-
-X/Y plotting is an essential step in the generative art workflow: since changes in parameters are not immediate and multiple parameters often work in conjunction, the best way to go about it is to compare the results of different settings in an X/Y plot. When using Image to Image for example, an X/Y plot of multiple CFG scales (e.g. 5, 10, 14) and denoising strengths (0.35, 0.5, 0.75) makes it very easy to determine the right combination. X/Y plot can also be used to find the right seed (e.g. -1, -1, -1) and sampler combination (e.g. Euler a, DDIM).
-
-When running the X/Y plot script you'll have to choose a mode (Text to Image, Image to Image, or Inpainting). The script will then use that mode's settings from the last time that mode was run:
-
-![XY plot mode options](public/images/xy_plot_mode_selection.png)
-
-The result of X/Y plot is a grid as well as the individual images. Use the `Grid only` option to control whether the individual images should be included. Grids are always opened as separate images, whereas the individual images are added to the existing image as nested layer groups. Each layer is named after its X/Y parameter combination:
-
-🔴🔴🔴 GIF GIF GIF
-
-**NOTE:** For now, script support is **disabled** by default since some changes to A1111's API are necessary. The branch with the required A1111 SD WebUI API changes can be found here: `https://github.com/tgiesselmann/stable-diffusion-webui/tree/script-api`. There is also a [pull request for these API changes](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5940) but it hasn't been merged yet. Once you are running A1111 with the required API changes you can enable X/Y plot by editing `src/gimp_stable_boy/config.py` and setting `Config.ENABLE_SCRIPTS` to `True`.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
