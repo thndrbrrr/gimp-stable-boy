@@ -77,7 +77,7 @@ Stable Boy inserts any generated layers below the inpainting mask layer and then
 
 ### X/Y plotting
 
-X/Y plotting is an essential step in generative art workflows: since changes in parameters are not immediate and multiple parameters often work in conjunction, the best way to go about it is to compare the results of different settings in an X/Y plot. When using Image to Image for example, an X/Y plot of multiple CFG scales (e.g. 5, 10, 14) and denoising strengths (0.35, 0.5, 0.75) makes it very easy to determine the right combination:
+X/Y plotting is an essential step in generative art workflows: since changes in parameters are not immediate and multiple parameters often work in conjunction, the best way to go about it is to compare the results of different settings in an X/Y plot. When using Image to Image for example, an X/Y plot of multiple CFG scales and denoising strengths makes it very easy to determine the right combination:
 
 ![img2img XY plot CFG/denoising](public/images/img2imgxy.gif)
 
@@ -143,9 +143,9 @@ Distributed under the GNU General Public License v3.0. See file [`COPYING`](COPY
 
 ## Contact
 
-Torben: tsgiesselmann@gmail.com
+Mail: [torben@sdf.org](mailto:torben@sdf.org)
 
-Stable Boy: [https://github.com/tgiesselmann/gimp-stable-boy](https://github.com/tgiesselmann/gimp-stable-boy)
+Mastodon: [@torben@mastodon.sdf.org](https://mastodon.sdf.org/@torben)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
