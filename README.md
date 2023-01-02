@@ -143,7 +143,7 @@ Distributed under the GNU General Public License v3.0. See file [`COPYING`](COPY
 
 ## Contact
 
-Mail: [torben@sdf.org](mailto:torben@sdf.org)
+Mail: torben@sdf.org
 
 Mastodon: [@torben@mastodon.sdf.org](https://mastodon.sdf.org/@torben)
 
