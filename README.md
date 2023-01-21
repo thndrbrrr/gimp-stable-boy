@@ -11,7 +11,7 @@
 
 [AUTOMATIC1111's Stable Diffusion WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) is one of the most powerful tools in the generative AI space. Stable Boy puts that power into GIMP 2.10 by calling into A1111 WebUI's API.
 
-Here's a short demo video:
+Here's a short demo video (of v0.1 ... haven't found time to make a new one):
 
 [![A short demo](./public/images/demo-video-screenshot.png)](https://youtu.be/YMVog30OcTI)
 
