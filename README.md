@@ -22,7 +22,7 @@ Here's a short demo video (of v0.1 ... haven't found time to make a new one):
 
 1. Clone the repo:
    ```sh
-   git clone https://github.com/tgiesselmann/gimp-stable-boy.git
+   git clone https://github.com/thndrbrrr/gimp-stable-boy.git
    ```
 1. Start GIMP, open Preferences and add the absolute path to _sub-folder_ (!) `src` to GIMP's plugin search path:
    ```
@@ -87,7 +87,7 @@ When running the X/Y plot script you'll have to choose a mode (Text to Image, Im
 
 ![XY plot mode options](public/images/xy_plot_mode_selection.png)
 
-**NOTE:** For now, script support is **disabled** by default since some changes to A1111's API are necessary. The branch with the required A1111 SD WebUI API changes can be found here: `https://github.com/tgiesselmann/stable-diffusion-webui/tree/script-api`. There is also a [pull request for these API changes](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5940) but it hasn't been merged yet. Once you are running A1111 with the required API changes you can enable X/Y plot by editing `src/gimp_stable_boy/config.py` and setting `Config.ENABLE_SCRIPTS` to `True`.
+**NOTE:** For now, script support is **disabled** by default since some changes to A1111's API are necessary. The branch with the required A1111 SD WebUI API changes can be found here: `https://github.com/thndrbrrr/stable-diffusion-webui/tree/script-api`. There is also a [pull request for these API changes](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5940) but it hasn't been merged yet. Once you are running A1111 with the required API changes you can enable X/Y plot by editing `src/gimp_stable_boy/config.py` and setting `Config.ENABLE_SCRIPTS` to `True`.
 
 ### Support for Rectangle Selection tool
 
