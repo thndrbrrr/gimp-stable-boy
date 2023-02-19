@@ -22,11 +22,10 @@ import os, sys
 from importlib import import_module
 import inspect
 import gimpfu
-import gimp_stable_boy as sb
-
 # Fix relative imports in Windows
 path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, path)
+import gimp_stable_boy as sb
 
 if __name__ == '__main__': 
 
