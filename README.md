@@ -48,6 +48,8 @@ Stable Boy can be found in the `Stable Boy` top menu, with the following options
 - Scripts
   - X/Y plot
 
+> ℹ️ Stable Boy's menu items will be grayed out if no image is open. 
+
 ### Model selection
 
 Stable Boy currently doesn't have an option to choose the model. You'll have to do that in WebUI. Loading an inpainting model is recommended.
@@ -104,12 +106,9 @@ If there is neither a selection nor an inpainting mask (see below), Stable Boy w
 
 ## Roadmap
 
-✅ ~~Rectangular selections as image sources for each mode~~
-
-✅ ~~Inpainting on large images: Stable Boy determines the region to send to Stable Diffusion based on where you painted the mask~~
-
-✅ ~~Script: X/Y plot~~
-
+- [x] ~~Rectangular selections as image sources for each mode~~
+- [x] ~~Inpainting on large images: Stable Boy determines the region to send to Stable Diffusion based on where you painted the mask~~
+- [x] ~~Script: X/Y plot~~
 - [ ] Outpainting
 - [ ] Better GUI
 - [ ] Keep metadata (seed, sampler settings and such)
@@ -143,7 +142,7 @@ Distributed under the GNU General Public License v3.0. See file [`COPYING`](COPY
 
 ## Contact
 
-Mail: torben@sdf.org
+Mail: thndrbrrr@gmail.com
 
 Mastodon: [@torben@mastodon.sdf.org](https://mastodon.sdf.org/@torben)
 
