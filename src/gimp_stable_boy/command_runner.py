@@ -49,6 +49,8 @@ def run_sd_command(cmd):
             cmd.img.undo_group_end()
         elif cmd.status == 'ERROR':
             raise Exception(cmd.error_msg)
+        else:
+            raise Exception("Unknown status: " + cmd.status)
     except Exception as e:
         error_dialog = gtk.MessageDialog(None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, str(e))
         error_dialog.run()

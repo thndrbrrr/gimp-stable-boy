@@ -62,6 +62,7 @@ class StableDiffusionCommand(StableBoyCommand):
             self.timeout = self._estimate_timeout(self.req_data)
         else:
             self.timeout = socket._GLOBAL_DEFAULT_TIMEOUT  # type: ignore
+        self.status = 'RUNNING'
 
     def run(self):
         self.status = 'RUNNING'
